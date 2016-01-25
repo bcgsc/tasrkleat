@@ -1,4 +1,6 @@
 import os
+import re
+
 import ruffus as R
 import logging.config
 logging.config.fileConfig('logging.config')
@@ -28,19 +30,36 @@ def download_bam(output_bam, extras):
     U.execute(cmd, flag)
 
 
-@R.mkdir(download_bam, R.formatter(), '{subpath[0][1]}/bam2fastq')
+@R.mkdir(download_bam, R.formatter(), '{subpath[0][1]}/sort_bam_by_name')
 @R.transform(download_bam, R.formatter(), [
     # name a is arbitarily selected, a short prefix for clarity and simplicity
     # since the sample can be disambiguated by the result path already. More
     # names will be selected in alphabetical order in the rest of the code.
+    '{subpath[0][1]}/sort_bam_by_name/a.bam',
+    '{subpath[0][1]}/sort_bam_by_name/sort_bam_by_name.log',
+    '{subpath[0][1]}/sort_bam_by_name/sort_bam_by_name.SUCCESS'
+])
+@U.timeit
+def sort_bam_by_name(input_bam, outputs):
+    logger.info(outputs)
+    bam, log, flag = outputs
+    output_prefix = re.sub('\.bam$', '', bam)
+    num_cpus = CONFIG['num_cpus']
+    cmd = ('samtools sort -@ {num_cpus} -n {input_bam} {output_prefix} 2>&1 '
+           '| tee {log}').format(**locals())
+    U.execute(cmd, flag)
+
+
+@R.mkdir(sort_bam_by_name, R.formatter(), '{subpath[0][1]}/bam2fastq')
+@R.transform(sort_bam_by_name, R.formatter(), [
     '{subpath[0][1]}/bam2fastq/a_1.fq',
     '{subpath[0][1]}/bam2fastq/a_2.fq',
     '{subpath[0][1]}/bam2fastq/bam2fastq.log',
     '{subpath[0][1]}/bam2fastq/bam2fastq.SUCCESS'
 ])
 @U.timeit
-def bam2fastq(input_bam, outputs):
-    logger.info(outputs)
+def bam2fastq(inputs, outputs):
+    input_bam, _, _ = inputs
     fq1, fq2, log, flag = outputs
     cmd = ('bedtools bamtofastq -i {input_bam} -fq {fq1} -fq2 {fq2} 2>&1 '
            '| tee {log}').format(**locals())
@@ -74,7 +93,7 @@ def download_bf(output_bf, extras):
 @U.timeit
 def extract_bf(input_tar_gz, outputs):
     bf, txt, flag = outputs
-    tar_gz_prefix = os.path.basename(input_tar_gz).rstrip('.tar.gz')
+    tar_gz_prefix = re.sub('\.tar\.gz$', '', os.path.basename(input_tar_gz))
     outdir = os.path.dirname(bf)
     cmd = ('tar zxf {input_tar_gz} -C {outdir} '
            '&& mv -v {outdir}/{tar_gz_prefix}/{tar_gz_prefix}.bf {outdir}/b.bf '

@@ -50,24 +50,44 @@ def sort_bam_by_name(input_bam, outputs):
     U.execute(cmd, flag)
 
 
-@R.mkdir(sort_bam_by_name, R.formatter(), '{subpath[0][1]}/bam2fastq')
+# @R.mkdir(sort_bam_by_name, R.formatter(), '{subpath[0][1]}/bam2fastq')
+# @R.transform(sort_bam_by_name, R.formatter(), [
+#     '{subpath[0][1]}/bam2fastq/a_1.fq',
+#     '{subpath[0][1]}/bam2fastq/a_2.fq',
+#     '{subpath[0][1]}/bam2fastq/bam2fastq.log',
+#     '{subpath[0][1]}/bam2fastq/bam2fastq.SUCCESS'
+# ])
+# @U.timeit
+# def bam2fastq(inputs, outputs):
+#     input_bam, _, _ = inputs
+#     fq1, fq2, log, flag = outputs
+#     cmd = ('bedtools bamtofastq -i {input_bam} -fq {fq1} -fq2 {fq2} 2>&1 '
+#            '| tee {log}').format(**locals())
+#     U.execute(cmd, flag)
+
+# instead of converting bam to fastq, which takes a lot of time, just remove
+# the @CO lines from the bam, which causes problematic parsing in
+# biobloomcategorizer, the same problem as described in
+# https://groups.google.com/forum/#!msg/abyss-users/uDoJjgPWeu4/fJ-SYGN8XLsJ
+
+
+@R.mkdir(sort_bam_by_name, R.formatter(), '{subpath[0][1]}/remove_CO_header')
 @R.transform(sort_bam_by_name, R.formatter(), [
-    '{subpath[0][1]}/bam2fastq/a_1.fq',
-    '{subpath[0][1]}/bam2fastq/a_2.fq',
-    '{subpath[0][1]}/bam2fastq/bam2fastq.log',
-    '{subpath[0][1]}/bam2fastq/bam2fastq.SUCCESS'
+    '{subpath[0][1]}/remove_CO_header/a.bam',
+    '{subpath[0][1]}/remove_CO_header/remove_CO_header.log',
+    '{subpath[0][1]}/remove_CO_header/remove_CO_header.SUCCESS'
 ])
 @U.timeit
-def bam2fastq(inputs, outputs):
+def remove_CO_header(inputs, outputs):
     input_bam, _, _ = inputs
-    fq1, fq2, log, flag = outputs
-    cmd = ('bedtools bamtofastq -i {input_bam} -fq {fq1} -fq2 {fq2} 2>&1 '
+    output_bam, log, flag = outputs
+    cmd = ('samtools view –h {bam} |grep –v "^@CO" |samtools view –Sb - > {output_bam} '
            '| tee {log}').format(**locals())
     U.execute(cmd, flag)
 
 
-@R.follows(bam2fastq)
-@R.mkdir(bam2fastq, R.formatter(), '{subpath[0][1]}/download_bf')
+@R.follows(remove_CO_header)
+@R.mkdir(remove_CO_header, R.formatter(), '{subpath[0][1]}/download_bf')
 @R.originate(
     os.path.join(CONFIG['output_dir'], 'download_bf', os.path.basename(CONFIG['input_gs_bf'])),
     [os.path.join(CONFIG['output_dir'], 'download_bf', 'download_bf.log'),
@@ -104,8 +124,8 @@ def extract_bf(input_tar_gz, outputs):
 
 
 @R.follows(extract_bf)
-@R.mkdir(bam2fastq, R.formatter(), '{subpath[0][1]}/biobloomcategorizer')
-@R.transform(bam2fastq, R.formatter(), [
+@R.mkdir(remove_CO_header, R.formatter(), '{subpath[0][1]}/biobloomcategorizer')
+@R.transform(remove_CO_header, R.formatter(), [
     '{subpath[0][1]}/biobloomcategorizer/p_1.fq',
     '{subpath[0][1]}/biobloomcategorizer/p_2.fq',
     '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.log',

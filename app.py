@@ -126,21 +126,27 @@ def extract_bf(input_tar_gz, outputs):
 @R.follows(extract_bf)
 @R.mkdir(remove_CO_header, R.formatter(), '{subpath[0][1]}/biobloomcategorizer')
 @R.transform(remove_CO_header, R.formatter(), [
-    '{subpath[0][1]}/biobloomcategorizer/p_1.fq',
-    '{subpath[0][1]}/biobloomcategorizer/p_2.fq',
+    '{subpath[0][1]}/biobloomcategorizer/a_{0}.fq.gz'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
+    '{subpath[0][1]}/biobloomcategorizer/p_{0}.fq.gz'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
     '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.log',
     '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.SUCCESS'
 ])
 @U.timeit
 def biobloomcategorizer(inputs, outputs):
-    fq1, fq2, _, _ = inputs
-    _, _, log, flag = outputs
+    input_fq1, input_fq2, _, _ = inputs
+    output_fq1, output_fq2, log, flag = outputs
     output_prefix = os.path.join(os.path.dirname(flag), 'a')
     bf = CONFIG['input_bf']
     num_cpus = CONFIG['num_cpus']
+    # considered using -d, but then the paired-end reads get interlaced into a
+    # single file, which would become problematic when the paired-end read
+    # names aren't distinguishable
     cmd = ("biobloomcategorizer -p {output_prefix} -e -f '{bf}' -t {num_cpus} "
-           "{fq1} {fq2} 2>&1 | tee {log}".format(**locals()))
+           "--gz_output --fq {input_fq1} {input_fq2} 2>&1 | tee {log}".format(**locals()))
     U.execute(cmd, flag)
+
+
+
 
                                             
 if __name__ == "__main__":

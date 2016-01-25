@@ -69,8 +69,6 @@ def sort_bam_by_name(input_bam, outputs):
 # the @CO lines from the bam, which causes problematic parsing in
 # biobloomcategorizer, the same problem as described in
 # https://groups.google.com/forum/#!msg/abyss-users/uDoJjgPWeu4/fJ-SYGN8XLsJ
-
-
 @R.mkdir(sort_bam_by_name, R.formatter(), '{subpath[0][1]}/remove_CO_header')
 @R.transform(sort_bam_by_name, R.formatter(), [
     '{subpath[0][1]}/remove_CO_header/a.bam',
@@ -81,7 +79,7 @@ def sort_bam_by_name(input_bam, outputs):
 def remove_CO_header(inputs, outputs):
     input_bam, _, _ = inputs
     output_bam, log, flag = outputs
-    cmd = ('samtools view –h {bam} |grep –v "^@CO" |samtools view –Sb - > {output_bam} '
+    cmd = ('samtools view -h {input_bam} | grep -v "^@CO" | samtools view -Sb - > {output_bam} 2>&1'
            '| tee {log}').format(**locals())
     U.execute(cmd, flag)
 
@@ -126,14 +124,14 @@ def extract_bf(input_tar_gz, outputs):
 @R.follows(extract_bf)
 @R.mkdir(remove_CO_header, R.formatter(), '{subpath[0][1]}/biobloomcategorizer')
 @R.transform(remove_CO_header, R.formatter(), [
-    '{subpath[0][1]}/biobloomcategorizer/a_{0}.fq.gz'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
-    '{subpath[0][1]}/biobloomcategorizer/p_{0}.fq.gz'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
+    '{{subpath[0][1]}}/biobloomcategorizer/a_{0}.fq.gz'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
+    '{{subpath[0][1]}}/biobloomcategorizer/p_{0}.fq.gz'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
     '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.log',
     '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.SUCCESS'
 ])
 @U.timeit
 def biobloomcategorizer(inputs, outputs):
-    input_fq1, input_fq2, _, _ = inputs
+    input_bam, _, _ = inputs
     output_fq1, output_fq2, log, flag = outputs
     output_prefix = os.path.join(os.path.dirname(flag), 'a')
     bf = CONFIG['input_bf']
@@ -141,8 +139,8 @@ def biobloomcategorizer(inputs, outputs):
     # considered using -d, but then the paired-end reads get interlaced into a
     # single file, which would become problematic when the paired-end read
     # names aren't distinguishable
-    cmd = ("biobloomcategorizer -p {output_prefix} -e -f '{bf}' -t {num_cpus} "
-           "--gz_output --fq {input_fq1} {input_fq2} 2>&1 | tee {log}".format(**locals()))
+    cmd = ("biobloomcategorizer -p {output_prefix} -e -i -f '{bf}' -t {num_cpus} "
+           "--gz_output --fq {input_bam} 2>&1 | tee {log}".format(**locals()))
     U.execute(cmd, flag)
 
 

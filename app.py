@@ -127,8 +127,9 @@ def extract_bf(input_tar_gz, outputs):
 @R.follows(extract_bf)
 @R.mkdir(remove_CO_header, R.formatter(), '{subpath[0][1]}/biobloomcategorizer')
 @R.transform(remove_CO_header, R.formatter(), [
-    '{{subpath[0][1]}}/biobloomcategorizer/a_{0}.fq.gz'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
-    '{{subpath[0][1]}}/biobloomcategorizer/p_{0}.fq.gz'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
+    # because of .format(), {{}} means it's literal
+    '{{subpath[0][1]}}/biobloomcategorizer/a_{0}_1.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
+    '{{subpath[0][1]}}/biobloomcategorizer/a_{0}_2.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
     '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.log',
     '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.SUCCESS'
 ])
@@ -143,12 +144,46 @@ def biobloomcategorizer(inputs, outputs):
     # single file, which would become problematic when the paired-end read
     # names aren't distinguishable
     cmd = ("biobloomcategorizer -p {output_prefix} -e -i -f '{bf}' -t {num_cpus} "
-           "--gz_output --fq {input_bam} 2>&1 | tee {log}".format(**locals()))
+           "--fq {input_bam} 2>&1 | tee {log}".format(**locals()))
     U.execute(cmd, flag)
 
 
+@R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/abyss')
+@R.transform(biobloomcategorizer, R.formatter(), [
+    # '{subpath[0][1]}/abyss/coverage.hist',
+    # '{subpath[0][1]}/abyss/a-1.fa',
+    # '{subpath[0][1]}/abyss/a-bubbles.fa',
+    # '{subpath[0][1]}/abyss/a-1.adj',
+    # '{subpath[0][1]}/abyss/a-1.path',
+    # '{subpath[0][1]}/abyss/a-2.path',
+    # '{subpath[0][1]}/abyss/a-2.adj',
+    # '{subpath[0][1]}/abyss/a-3.adj',
+    # # this file contains the unitigs
+    '{subpath[0][1]}/abyss/a-3.fa',
+    # '{subpath[0][1]}/abyss/a-indel.fa',
+    # # this is a symlink to a-3.fa
+    # '{subpath[0][1]}/abyss/a-unitigs.fa',
+    # '{subpath[0][1]}/abyss/a-stats.tab',
+    # # this is a symlink to a-stats.tab
+    # '{subpath[0][1]}/abyss/a-stats',
+    # '{subpath[0][1]}/abyss/a-stats.csv',
+    # '{subpath[0][1]}/abyss/a-stats.md',
+    '{subpath[0][1]}/abyss/a.log',
+    '{subpath[0][1]}/abyss/a.SUCCESS'
+])
+@U.timeit
+def abyss(inputs, outputs):
+    input_fq1, input_fq2, _, _ = inputs
+    output_fa, log, flag = outputs
+    num_cpus = CONFIG['num_cpus']
+    # name=a is chosen arbitrarily, for simplicity and clarity
+    cfg = CONFIG['steps']['abyss']
+    cmd = ("abyss-pe name=a k={kmer_size} in='{input_fq1} {input_fq2}' "
+           "np=1 2>&1 | tee {log}").format(kmer_size=cfg['kmer_size'], **locals())
+           # "np={num_cpus} 2>&1 | tee {log}").format(
+           #     kmer_size=cfg['kmer_size'], **locals())
+    U.execute(cmd, flag)
 
 
-                                            
 if __name__ == "__main__":
     R.pipeline_run()

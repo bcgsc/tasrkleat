@@ -79,7 +79,10 @@ def sort_bam_by_name(input_bam, outputs):
 def remove_CO_header(inputs, outputs):
     input_bam, _, _ = inputs
     output_bam, log, flag = outputs
-    cmd = ('samtools view -h {input_bam} | grep -v "^@CO" | samtools view -Sb - > {output_bam} 2>&1'
+    num_cpus = CONFIG['num_cpus']
+    cmd = ('samtools view -h -@ {num_cpus} {input_bam} '
+           '| grep -v "^@CO" '
+           '| samtools view -Sb -@ {num_cpus} - > {output_bam} 2>&1'
            '| tee {log}').format(**locals())
     U.execute(cmd, flag)
 

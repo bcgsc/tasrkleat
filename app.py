@@ -2,15 +2,16 @@ import os
 import re
 
 import ruffus as R
+
+from config import CONFIG
 import logging.config
-logging.config.fileConfig('logging.config')
+logging.config.dictConfig(CONFIG['logging'])
 logger = logging.getLogger(__name__)
 
 import utils as U
-from config import CONFIG
 
 import pprint
-logger.info(pprint.pformat(CONFIG))
+logger.info('\n{0}'.format(pprint.pformat(CONFIG)))
 
 @R.mkdir(CONFIG['input_gs_bam'], R.formatter(),
          os.path.join(CONFIG['output_dir'], 'download_bam'))

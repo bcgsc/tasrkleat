@@ -22,9 +22,9 @@ BioBloomTools and ABYSS will be available
 
 ### To build the image yourself
 
-    $ git clone git@github.com:bcgsc/tasrcloud-dockerfile.git
+    $ git clone git@github.com:bcgsc/tasrcloud.git
 
-    $ cd tasrcloud-dockerfile
+    $ cd tasrcloud
 
     $ docker build <username>/tasrcloud .
 

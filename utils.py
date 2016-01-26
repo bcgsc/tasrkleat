@@ -75,3 +75,13 @@ def execute(cmd, flag_file=None, msg_id='#', debug=False):
             'CMD: "{2}"'.format(msg_id, err, cmd))
 
                                     
+
+def fastq_too_small(fq, num_reads=50):
+    num = num_reads * 4
+    count = 0
+    with open(fq) as inf:
+        for line in inf:
+            count += 1
+            if count >= num:
+                return False, None
+    return True, count / 4

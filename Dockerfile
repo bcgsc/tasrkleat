@@ -2,13 +2,25 @@ FROM google/cloud-sdk
 MAINTAINER Zhuyi Xue <zxue.bcgsc@gmail.com>
 
 RUN apt-get update
-RUN apt-get -yf install build-essential automake curl unzip zlib1g-dev libpython-dev
 
 # mpirun needs ssh to run successfully
 # bc is from bsdmainutils, which is needed to run abyss
 RUN apt-get -yf install \
-    libboost-all-dev openmpi-bin \
-    libsparsehash-dev libopenmpi-dev libsqlite3-dev ssh bsdmainutils
+    automake \
+    bedtools \
+    bsdmainutils \
+    build-essential \
+    curl \
+    libboost-all-dev \
+    libopenmpi-dev \
+    libpython-dev \
+    libsparsehash-dev \
+    libsqlite3-dev \
+    openmpi-bin \
+    samtools \
+    ssh \
+    unzip \
+    zlib1g-dev
 
 # RUN curl -OL "http://www.bcgsc.ca/platform/bioinfo/software/biobloomtools/releases/2.0.12/biobloomtools-2.0.12.tar.gz" \
 #     && tar zxf biobloomtools-2.0.12.tar.gz \
@@ -51,8 +63,6 @@ RUN /bin/bash -c "source activate /root/venv \
                   && pip install ruffus \
 		  && pip install colorlog"
 # && pip install --upgrade google-api-python-client \
-
-RUN apt-get install -yf bedtools samtools
 
 RUN mkdir /tasrcloud
 ADD *.py run_tasrcloud /tasrcloud/

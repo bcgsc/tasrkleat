@@ -1,5 +1,4 @@
-bf_generation
-test_data
+overhead
 .ruffus_history.sqlite
 *.log
 *.pyc

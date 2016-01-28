@@ -138,8 +138,8 @@ def biobloomcategorizer(inputs, outputs):
     # '{subpath[0][1]}/abyss/cba-stats',
     # '{subpath[0][1]}/abyss/cba-stats.csv',
     # '{subpath[0][1]}/abyss/cba-stats.md',
-    '{subpath[0][1]}/abyss/cba.log',
-    '{subpath[0][1]}/abyss/cba.SUCCESS'
+    '{subpath[0][1]}/abyss/abyss.log',
+    '{subpath[0][1]}/abyss/abyss.SUCCESS'
 ])
 @U.timeit
 def abyss(inputs, outputs):

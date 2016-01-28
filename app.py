@@ -176,15 +176,20 @@ def abyss(inputs, outputs):
 ])
 @U.timeit
 def upload(inputs, outputs):
-    input_dir = os.path.dirname(inputs[0])
+    # e.g. /tasrcloud_results/sample_name/abyss/cba.log => /tasrcloud_results/sample_name
+    input_dir = os.path.dirname(os.path.dirname(inputs[0]))
     log, flag = outputs
     top_log = CONFIG['logging']['handlers']['file']['filename']
     cfg = CONFIG['steps']['upload']
     auth_gsutil=CONFIG['auth_gsutil']
-    # e.g. /tasrcloud_results/sample_name/abyss => sample_name
-    sample_name = os.path.basename(os.path.dirname(input_dir))
-    output_gs_bucket_dir = os.path.join(cfg['output_gs_bucket'], sample_name)
-    cmd = ('{auth_gsutil} -m cp -r {input_dir} {top_log} {output_gs_bucket_dir}').format(**locals())
+
+    # e.g. /tasrcloud_results/sample_name => sample_name
+    sample_name = os.path.basename(input_dir)
+    bucket_dir = os.path.join(cfg['output_gs_bucket'], sample_name)
+
+    re_files_to_exclude = '|'.join(['.*\.fq$', '.*\.bam$'])
+    cmd = ("{auth_gsutil} -m rsync -x '{re_files_to_exclude}' -r -d "
+           "{input_dir} {bucket_dir}").format(**locals())
     U.execute(cmd, flag)
 
 

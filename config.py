@@ -34,7 +34,7 @@ def gen_config():
 
 
     if 'prefix' not in config or not config['prefix']:
-        config['prefix'] = os.path.basename(config['input_gs_bam']).rstrip('.bam')
+        config['prefix'] = re.sub('\.bam$', '', os.path.basename(config['input_gs_bam']))
 
     if 'output_dir' not in config or not config['output_dir']:
         config['output_dir'] = os.path.join(os.getcwd(), 'tasrcloud_results', config['prefix'])

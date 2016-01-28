@@ -63,7 +63,7 @@ RUN pip install --upgrade \
 # # && pip install --upgrade google-api-python-client \
 
 RUN mkdir /tasrcloud
-ADD *.py run_tasrcloud /tasrcloud/
+ADD *.py /tasrcloud/
 
 # CMD value should be json, must use double quotes
 CMD ["app.py", \

@@ -26,10 +26,11 @@ logger.info('\n{0}'.format(pprint.pformat(CONFIG)))
 @U.timeit
 def download_bam(output_bam, extras):
     log, flag = extras
-    cmd = ('gsutil -m cp {bam} {outdir} 2>&1 '
-           '| tee {log}').format(bam=CONFIG['input_gs_bam'],
-                                 outdir=os.path.dirname(output_bam),
-                                 log=log)
+    cmd = ('{auth_gsutil} -m cp {bam} {outdir} 2>&1 | tee {log}').format(
+        auth_gsutil=CONFIG['auth_gsutil'],
+        bam=CONFIG['input_gs_bam'],
+        outdir=os.path.dirname(output_bam),
+        log=log)
     U.execute(cmd, flag)
 
 
@@ -51,43 +52,6 @@ def sort_bam_by_name(input_bam, outputs):
     cmd = ('samtools sort -@ {num_cpus} -n {input_bam} {output_prefix} 2>&1 '
            '| tee {log}').format(**locals())
     U.execute(cmd, flag)
-
-
-# @R.mkdir(sort_bam_by_name, R.formatter(), '{subpath[0][1]}/bam2fastq')
-# @R.transform(sort_bam_by_name, R.formatter(), [
-#     '{subpath[0][1]}/bam2fastq/a_1.fq',
-#     '{subpath[0][1]}/bam2fastq/a_2.fq',
-#     '{subpath[0][1]}/bam2fastq/bam2fastq.log',
-#     '{subpath[0][1]}/bam2fastq/bam2fastq.SUCCESS'
-# ])
-# @U.timeit
-# def bam2fastq(inputs, outputs):
-#     input_bam, _, _ = inputs
-#     fq1, fq2, log, flag = outputs
-#     cmd = ('bedtools bamtofastq -i {input_bam} -fq {fq1} -fq2 {fq2} 2>&1 '
-#            '| tee {log}').format(**locals())
-#     U.execute(cmd, flag)
-
-# # instead of converting bam to fastq, which takes a lot of time, just remove
-# # the @CO lines from the bam, which causes problematic parsing in
-# # biobloomcategorizer, the same problem as described in
-# # https://groups.google.com/forum/#!msg/abyss-users/uDoJjgPWeu4/fJ-SYGN8XLsJ
-# @R.mkdir(sort_bam_by_name, R.formatter(), '{subpath[0][1]}/remove_CO_header')
-# @R.transform(sort_bam_by_name, R.formatter(), [
-#     '{subpath[0][1]}/remove_CO_header/a.bam',
-#     '{subpath[0][1]}/remove_CO_header/remove_CO_header.log',
-#     '{subpath[0][1]}/remove_CO_header/remove_CO_header.SUCCESS'
-# ])
-# @U.timeit
-# def remove_CO_header(inputs, outputs):
-#     input_bam, _, _ = inputs
-#     output_bam, log, flag = outputs
-#     num_cpus = CONFIG['num_cpus']
-#     cmd = ('samtools view -h -@ {num_cpus} {input_bam} '
-#            '| grep -v "^@CO" '
-#            '| samtools view -Sb -@ {num_cpus} - > {output_bam} 2>&1'
-#            '| tee {log}').format(**locals())
-#     U.execute(cmd, flag)
 
 
 @R.follows(sort_bam_by_name)
@@ -153,7 +117,6 @@ def biobloomcategorizer(inputs, outputs):
             logger.debug('removing {0}'.format(path_f))
             os.remove(path_f)
 
-
 @R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/abyss')
 @R.transform(biobloomcategorizer, R.formatter(), [
     # '{subpath[0][1]}/abyss/coverage.hist',
@@ -164,7 +127,6 @@ def biobloomcategorizer(inputs, outputs):
     # '{subpath[0][1]}/abyss/cba-2.path',
     # '{subpath[0][1]}/abyss/cba-2.adj',
     # '{subpath[0][1]}/abyss/cba-3.adj',
-    # this file contains the unitigs
     # '{subpath[0][1]}/abyss/cba-3.fa',
     # '{subpath[0][1]}/abyss/cba-indel.fa',
     # # this is a symlink to cba-3.fa
@@ -214,13 +176,13 @@ def abyss(inputs, outputs):
 def upload(inputs, outputs):
     input_dir = os.path.dirname(inputs[0])
     log, flag = outputs
+    top_log = CONFIG['logging']['handlers']['file']['filename']
     cfg = CONFIG['steps']['upload']
-    # /tasrcloud_results/sample_name/abyss => sample_name
+    auth_gsutil=CONFIG['auth_gsutil']
+    # e.g. /tasrcloud_results/sample_name/abyss => sample_name
     sample_name = os.path.basename(os.path.dirname(input_dir))
     output_gs_bucket_dir = os.path.join(cfg['output_gs_bucket'], sample_name)
-    cmd = ('ls -R /refresh-token '
-           '&& gsutil -o Credentials:gs_oauth2_refresh_token=$(cat /refresh-token/refresh-token) '
-           '-m cp -r {input_dir} {output_gs_bucket_dir}').format(**locals())
+    cmd = ('{auth_gsutil} -m cp -r {input_dir} {top_log} {output_gs_bucket_dir}').format(**locals())
     U.execute(cmd, flag)
 
 

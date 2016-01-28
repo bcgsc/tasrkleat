@@ -7,10 +7,13 @@ from argsparser import parse_args
 
 def gen_config():
     args = parse_args()
+
     config = {
         'input_gs_bam': args.input_gs_bam,
         'input_gs_bf': args.input_gs_bf,
         'num_cpus': multiprocessing.cpu_count(),
+        # authorized gsutil
+        'auth_gsutil': 'gsutil -o Credentials:gs_oauth2_refresh_token=$(cat {0})'.format(args.refresh_token),
 
         'steps': {
             'biobloomcategorizer': {

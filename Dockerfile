@@ -22,6 +22,11 @@ RUN apt-get -yf install \
     unzip \
     zlib1g-dev
 
+# enable fast gsutil cp large files
+RUN apt-get install -yf gcc python-dev python-setuptools \
+    && easy_install -U pip \
+    && pip install -U crcmod
+
 # RUN curl -OL "http://www.bcgsc.ca/platform/bioinfo/software/biobloomtools/releases/2.0.12/biobloomtools-2.0.12.tar.gz" \
 #     && tar zxf biobloomtools-2.0.12.tar.gz \
 #     && cd biobloomtools-2.0.12 \

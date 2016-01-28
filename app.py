@@ -204,5 +204,25 @@ def abyss(inputs, outputs):
     U.execute(cmd, flag)
 
 
+@R.follows(abyss)
+@R.mkdir(abyss, R.formatter(), '{subpath[0][1]}/upload')
+@R.transform(abyss, R.formatter(), [
+    '{subpath[0][1]}/upload/upload.log',
+    '{subpath[0][1]}/upload/upload.SUCCESS',
+])
+@U.timeit
+def upload(inputs, outputs):
+    input_dir = os.path.dirname(inputs[0])
+    log, flag = outputs
+    cfg = CONFIG['steps']['upload']
+    # /tasrcloud_results/sample_name/abyss => sample_name
+    sample_name = os.path.basename(os.path.dirname(input_dir))
+    output_gs_bucket_dir = os.path.join(cfg['output_gs_bucket'], sample_name)
+    cmd = ('ls -R /refresh-token '
+           '&& gsutil -o Credentials:gs_oauth2_refresh_token=$(cat /refresh-token/refresh-token) '
+           '-m cp -r {input_dir} {output_gs_bucket_dir}').format(**locals())
+    U.execute(cmd, flag)
+
+
 if __name__ == "__main__":
     R.pipeline_run()

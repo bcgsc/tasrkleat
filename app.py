@@ -21,7 +21,7 @@ logger.info('\n{0}'.format(pprint.pformat(CONFIG)))
     os.path.join(CONFIG['output_dir'], 'download_bam', os.path.basename(CONFIG['input_gs_bam'])),
     # use extra param to store the flag filename
     [os.path.join(CONFIG['output_dir'], 'download_bam', 'download_bam.log'),
-     os.path.join(CONFIG['output_dir'], 'download_bam', 'download_bam.SUCCESS')],
+     os.path.join(CONFIG['output_dir'], 'download_bam', 'download_bam.COMPLETE')],
 )
 @U.timeit
 def download_bam(output_bam, extras):
@@ -41,7 +41,7 @@ def download_bam(output_bam, extras):
     # names will be selected in alphabetical order in the rest of the code.
     '{subpath[0][1]}/sort_bam_by_name/cba.bam',
     '{subpath[0][1]}/sort_bam_by_name/sort_bam_by_name.log',
-    '{subpath[0][1]}/sort_bam_by_name/sort_bam_by_name.SUCCESS'
+    '{subpath[0][1]}/sort_bam_by_name/sort_bam_by_name.COMPLETE'
 ])
 @U.timeit
 def sort_bam_by_name(input_bam, outputs):
@@ -59,7 +59,7 @@ def sort_bam_by_name(input_bam, outputs):
 @R.originate(
     os.path.join(CONFIG['output_dir'], 'download_bf', os.path.basename(CONFIG['input_gs_bf'])),
     [os.path.join(CONFIG['output_dir'], 'download_bf', 'download_bf.log'),
-     os.path.join(CONFIG['output_dir'], 'download_bf', 'download_bf.SUCCESS')],
+     os.path.join(CONFIG['output_dir'], 'download_bf', 'download_bf.COMPLETE')],
 )
 @U.timeit
 def download_bf(output_bf, extras):
@@ -73,7 +73,7 @@ def download_bf(output_bf, extras):
 @R.transform(download_bf, R.formatter(), [
     '{subpath[0][1]}/extract_bf/cba.bf',
     '{subpath[0][1]}/extract_bf/cba.txt',
-    '{subpath[0][1]}/extract_bf/extract_bf.SUCCESS'
+    '{subpath[0][1]}/extract_bf/extract_bf.COMPLETE'
 ])
 @U.timeit
 def extract_bf(input_tar_gz, outputs):
@@ -95,7 +95,7 @@ def extract_bf(input_tar_gz, outputs):
     '{{subpath[0][1]}}/biobloomcategorizer/cba_{0}_1.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
     '{{subpath[0][1]}}/biobloomcategorizer/cba_{0}_2.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
     '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.log',
-    '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.SUCCESS'
+    '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.COMPLETE'
 ])
 @U.timeit
 def biobloomcategorizer(inputs, outputs):
@@ -139,7 +139,7 @@ def biobloomcategorizer(inputs, outputs):
     # '{subpath[0][1]}/abyss/cba-stats.csv',
     # '{subpath[0][1]}/abyss/cba-stats.md',
     '{subpath[0][1]}/abyss/abyss.log',
-    '{subpath[0][1]}/abyss/abyss.SUCCESS'
+    '{subpath[0][1]}/abyss/abyss.COMPLETE'
 ])
 @U.timeit
 def abyss(inputs, outputs):
@@ -172,7 +172,7 @@ def abyss(inputs, outputs):
 @R.mkdir(abyss, R.formatter(), '{subpath[0][1]}/upload')
 @R.transform(abyss, R.formatter(), [
     '{subpath[0][1]}/upload/upload.log',
-    '{subpath[0][1]}/upload/upload.SUCCESS',
+    '{subpath[0][1]}/upload/upload.COMPLETE',
 ])
 @U.timeit
 def upload(inputs, outputs):

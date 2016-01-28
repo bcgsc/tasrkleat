@@ -5,6 +5,7 @@ RUN apt-get update
 
 # mpirun needs ssh to run successfully
 # bc is from bsdmainutils, which is needed to run abyss
+# check wheter crcmod is installed with "gsutil version -l"
 RUN apt-get -yf install \
     automake \
     bedtools \

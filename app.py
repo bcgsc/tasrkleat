@@ -33,29 +33,8 @@ def download_bam(output_bam, extras):
         log=log)
     U.execute(cmd, flag)
 
-
-@R.mkdir(download_bam, R.formatter(), '{subpath[0][1]}/sort_bam_by_name')
-@R.transform(download_bam, R.formatter(), [
-    # name cba is arbitarily selected, a short prefix for clarity and simplicity
-    # since the sample can be disambiguated by the result path already. More
-    # names will be selected in alphabetical order in the rest of the code.
-    '{subpath[0][1]}/sort_bam_by_name/cba.bam',
-    '{subpath[0][1]}/sort_bam_by_name/sort_bam_by_name.log',
-    '{subpath[0][1]}/sort_bam_by_name/sort_bam_by_name.COMPLETE'
-])
-@U.timeit
-def sort_bam_by_name(input_bam, outputs):
-    logger.info(outputs)
-    bam, log, flag = outputs
-    output_prefix = re.sub('\.bam$', '', bam)
-    num_cpus = CONFIG['num_cpus']
-    cmd = ('samtools sort -@ {num_cpus} -n {input_bam} {output_prefix} 2>&1 '
-           '| tee {log}').format(**locals())
-    U.execute(cmd, flag)
-
-
-@R.follows(sort_bam_by_name)
-@R.mkdir(sort_bam_by_name, R.formatter(), '{subpath[0][1]}/download_bf')
+@R.follows(download_bam)
+@R.mkdir(download_bam, R.formatter(), '{subpath[0][1]}/download_bf')
 @R.originate(
     os.path.join(CONFIG['output_dir'], 'download_bf', os.path.basename(CONFIG['input_gs_bf'])),
     [os.path.join(CONFIG['output_dir'], 'download_bf', 'download_bf.log'),
@@ -89,8 +68,8 @@ def extract_bf(input_tar_gz, outputs):
 
 
 @R.follows(extract_bf)
-@R.mkdir(sort_bam_by_name, R.formatter(), '{subpath[0][1]}/biobloomcategorizer')
-@R.transform(sort_bam_by_name, R.formatter(), [
+@R.mkdir(download_bam, R.formatter(), '{subpath[0][1]}/biobloomcategorizer')
+@R.transform(download_bam, R.formatter(), [
     # because of .format(), {{}} means it's literal
     '{{subpath[0][1]}}/biobloomcategorizer/cba_{0}_1.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
     '{{subpath[0][1]}}/biobloomcategorizer/cba_{0}_2.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
@@ -98,8 +77,7 @@ def extract_bf(input_tar_gz, outputs):
     '{subpath[0][1]}/biobloomcategorizer/biobloomcategorizer.COMPLETE'
 ])
 @U.timeit
-def biobloomcategorizer(inputs, outputs):
-    input_bam, _, _ = inputs
+def biobloomcategorizer(input_bam, outputs):
     output_fq1, output_fq2, log, flag = outputs
     output_dir = os.path.dirname(output_fq1)
     output_prefix = os.path.join(output_dir, 'cba')

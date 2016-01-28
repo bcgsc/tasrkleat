@@ -165,7 +165,7 @@ def biobloomcategorizer(inputs, outputs):
     # '{subpath[0][1]}/abyss/cba-2.adj',
     # '{subpath[0][1]}/abyss/cba-3.adj',
     # this file contains the unitigs
-    '{subpath[0][1]}/abyss/cba-3.fa',
+    # '{subpath[0][1]}/abyss/cba-3.fa',
     # '{subpath[0][1]}/abyss/cba-indel.fa',
     # # this is a symlink to cba-3.fa
     # '{subpath[0][1]}/abyss/cba-unitigs.fa',
@@ -180,18 +180,22 @@ def biobloomcategorizer(inputs, outputs):
 @U.timeit
 def abyss(inputs, outputs):
     input_fq1, input_fq2, _, _ = inputs
-    cutoff = 50                 # arbitrarily selected 2015-01-26
+    log, flag = outputs
+    cfg = CONFIG['steps']['abyss']
     too_small, read_count = U.fastq_too_small(input_fq1)
     if too_small:
-        logging.info('Only {read_count} (expect > {cutoff}) reads are found '
-                     'in\n\t{input_fq1}\n\t{input_fq2}\n'
-                     'too small for assembly'.format(**locals()))
+        cfg.update(locals())
+        msg = ('Only {read_count} (expect > {num_reads_cutoff}) reads are found '
+               'in\n\t{input_fq1}\n\t{input_fq2}\n'
+               'too small for assembly').format(**cfg)
+        logging.info(msg)
+        with open(log, 'wt') as opf:
+            opf.write('{0}\n'.format(msg))
+        U.touch(flag)
         return
 
-    output_fa, log, flag = outputs
-    outdir = os.path.dirname(output_fa)
+    outdir = os.path.dirname(log)
     num_cpus = CONFIG['num_cpus']
-    cfg = CONFIG['steps']['abyss']
     # as a note: name=a won't work for abyss-pe because of the particular way
     # how abyss reads command line parameters
     cmd = ("abyss-pe name=cba k={kmer_size} in='{input_fq1} {input_fq2}' "

@@ -26,7 +26,7 @@ logger.info('\n{0}'.format(pprint.pformat(CONFIG)))
 @U.timeit
 def download_bam(output_bam, extras):
     log, flag = extras
-    cmd = ('gsutil cp {bam} {outdir} 2>&1 '
+    cmd = ('gsutil -m cp {bam} {outdir} 2>&1 '
            '| tee {log}').format(bam=CONFIG['input_gs_bam'],
                                  outdir=os.path.dirname(output_bam),
                                  log=log)

@@ -19,12 +19,12 @@ def parse_args():
               "the name of the bloomfilter is assumed to be 'some-name'"))
 
     parser.add_argument(
-        '-n', '--abyss-num-reads-cutoff', type=int, default=50,
+        '-u', '--abyss-num-reads-cutoff', type=int, default=50,
         help=("Under which tasrcloud consider there are too few reads and "
               "run abyss at all. The default 50 is arbitrarily chosen"))
 
     parser.add_argument(
-        '-k', '--abyss-kmer-size', type=int, required=True
+        '-k', '--abyss-kmer-size', type=int, required=True,
         help=('the kmer size for running abyss, typically go for roughly '
               '~half the read length as a first trial. '
               'e.g. for 76bp, k=36 could be adequate'))

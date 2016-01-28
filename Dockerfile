@@ -47,7 +47,7 @@ RUN curl -OL "https://github.com/zyxue/biobloom/archive/master.zip" \
 RUN curl -OL "https://github.com/bcgsc/abyss/releases/download/1.9.0/abyss-1.9.0.tar.gz" \
     && tar zxf abyss-1.9.0.tar.gz \
     && cd abyss-1.9.0 \
-    && ./configure \
+    && ./configure --with-mpi=/usr/lib/openmpi \
     && make -j 8 \
     && make install \
     && cd .. && rm -rfv abyss-1.9.0*

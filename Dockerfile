@@ -11,21 +11,21 @@ RUN apt-get -yf install \
     bsdmainutils \
     build-essential \
     curl \
+    gcc \
     libboost-all-dev \
     libopenmpi-dev \
     libpython-dev \
     libsparsehash-dev \
     libsqlite3-dev \
     openmpi-bin \
+    python-dev \
+    python-setuptools \
     samtools \
     ssh \
     unzip \
-    zlib1g-dev
-
-# enable fast gsutil cp large files
-RUN apt-get install -yf gcc python-dev python-setuptools \
+    zlib1g-dev \
     && easy_install -U pip \
-    && pip install -U crcmod
+    && pip install -U crcmod colorlog ruffus
 
 # RUN curl -OL "http://www.bcgsc.ca/platform/bioinfo/software/biobloomtools/releases/2.0.12/biobloomtools-2.0.12.tar.gz" \
 #     && tar zxf biobloomtools-2.0.12.tar.gz \
@@ -52,20 +52,7 @@ RUN curl -OL "https://github.com/bcgsc/abyss/releases/download/1.9.0/abyss-1.9.0
     && make install \
     && cd .. && rm -rfv abyss-1.9.0*
 
-# This path will differ if the base image is ubtuntu, i.e.
-# ENV PATH=/root/anaconda2/bin:${PATH}
-ENV PATH=/tasrcloud:/anaconda2/bin:${PATH}
-
-# gsutils only supports python 2.6.x or 2.7.x at the time 2016-01-22
-RUN curl -OL  "https://3230d63b5fc54e62148e-c95ac804525aac4b6dba79b00b39d1d3.ssl.cf1.rackcdn.com/Anaconda2-2.4.1-Linux-x86_64.sh" \
-    && bash  Anaconda2-2.4.1-Linux-x86_64.sh -b \
-    && rm -v Anaconda2-2.4.1-Linux-x86_64.sh
-
-RUN pip install --upgrade \
-    colorlog \
-    ruffus
-
-# # && pip install --upgrade google-api-python-client \
+ENV PATH=/tasrcloud:${PATH}
 
 RUN mkdir /tasrcloud
 ADD *.py /tasrcloud/
@@ -78,3 +65,5 @@ CMD ["app.py", \
      "--upload-gs-bucket", "gs://tasrcloud-test-results", \
      "--refresh-token", "/refresh-token/refresh-token" \
     ]
+
+# # && pip install --upgrade google-api-python-client \

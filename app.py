@@ -111,11 +111,13 @@ def biobloomcategorizer(inputs, outputs):
     cmd = ("biobloomcategorizer -p {output_prefix} -e -i -f '{bf}' -t {num_cpus} "
            "--fq {input_bam} 2>&1 | tee {log}".format(**locals()))
     U.execute(cmd, flag)
-    for f in os.listdir(output_dir):
-        path_f = os.path.join(output_dir, f)
-        if path_f not in outputs:
-            logger.debug('removing {0}'.format(path_f))
-            os.remove(path_f)
+    # don't delete since filesystem in the container is ephemeral anyway, code
+    # left for ref
+    # for f in os.listdir(output_dir):
+    #     path_f = os.path.join(output_dir, f)
+    #     if path_f not in outputs:
+    #         logger.debug('removing {0}'.format(path_f))
+    #         os.remove(path_f)
 
 @R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/abyss')
 @R.transform(biobloomcategorizer, R.formatter(), [

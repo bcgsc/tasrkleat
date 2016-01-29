@@ -87,3 +87,12 @@ See [here](https://cloud.google.com/compute/docs/machine-types) for other machin
 
     # content within $() just extracts the pod name.
     $ kubectl logs $(kubectl get pods  --output=jsonpath={.items..metadata.name})
+
+### Accessing Kubernetes UI
+
+Find the server IP, username, password first
+
+    $ kubectl config view | grep 'server\|password\|username'
+
+Then go the the server IP address in a browser and follow the instruction. More
+information is available [here](https://github.com/kubernetes/kubernetes/blob/v1.0.6/docs/user-guide/ui.md).

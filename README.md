@@ -57,6 +57,7 @@ For more information about Docker, please try the
 
 ### Create a cluster with 3 nodes, each has 2 CPUs & 7.5 GB MEM
 
+    # For a list of machine types: https://cloud.google.com/compute/docs/machine-types#standard_machine_types
     $ gcloud container clusters create tasrcloud --num-nodes 3 --machine-type n1-standard-2
 
 See [here](https://cloud.google.com/compute/docs/machine-types) for other machine types.

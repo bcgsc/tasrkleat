@@ -71,7 +71,7 @@ See [here](https://cloud.google.com/compute/docs/machine-types) for other machin
 
 ### Passing cluster credentials to kubectl from Kubernetes
 
-    $ cloud container clusters get-credentials tasrcloud
+    $ gcloud container clusters get-credentials tasrcloud
 
 ### Delete the cluster with CAUTION
 

@@ -32,7 +32,9 @@ def gen_config():
 
     if 'output_dir' not in config or not config['output_dir']:
         config['output_dir'] = os.path.join(
-            os.getcwd(), config['prefix'], '{0}_results'.format(project_id))
+            # use - instead of _ to avoid confusion because when downloading
+            # the zip from GCS, / will replaced with _
+            os.getcwd(), config['prefix'], '{0}-results'.format(project_id))
 
     output_log_file = args.output_log
     if not output_log_file:

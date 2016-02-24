@@ -12,6 +12,11 @@ def parse_args():
               'e.g. gs://<bucket-name>/<some.bam>'))
 
     parser.add_argument(
+        '-t', '--num-threads',
+        help=('if not specified, will use the number of available cpus on '
+              'the machine'))
+
+    parser.add_argument(
         '-o', '--upload-gs-bucket', required=True,
         help=('the GCS bucket to write back results'))
 

@@ -11,7 +11,6 @@ def gen_config():
 
     config = {
         'input_gs_bam': args.input_gs_bam,
-        'num_cpus': multiprocessing.cpu_count(),
         # authorized gsutil
         'auth_gsutil': 'gsutil -o Credentials:gs_oauth2_refresh_token=$(cat {0})'.format(args.refresh_token),
 
@@ -23,6 +22,10 @@ def gen_config():
 
     }
 
+    if args.num_threads:
+        config['num_cpus'] = args.num_threads
+    else:
+        config['num_cpus'] = multiprocessing.cpu_count()
 
     if 'prefix' not in config or not config['prefix']:
         # trying to mimic the directory hierarchy as the input by remove gs://

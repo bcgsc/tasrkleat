@@ -82,5 +82,12 @@ def upload(inputs, outputs):
     U.execute(cmd, flag)
 
 
+@R.follows(upload)
+@U.timeit
+def cleanup():
+    """remove the output folder to save disk space"""
+    cmd = "rm -rfv {0}".format(CONFIG['output_dir'])
+    U.execute(cmd)
+
 if __name__ == "__main__":
     R.pipeline_run()

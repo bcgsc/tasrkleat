@@ -72,7 +72,7 @@ def upload(inputs, outputs):
 
     # don't upload input bam
     re_files_to_exclude = '|'.join([r'.*\.bam$'])
-    cmd = ("{auth_gsutil} -m rsync -x '{re_files_to_exclude}' -r -d "
+    cmd = ("{auth_gsutil} -m rsync -x '{re_files_to_exclude}' -r "
            "{top_dir} {bucket_dir}").format(**locals())
 
     # -x '' would be invalid and cause error

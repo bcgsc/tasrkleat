@@ -37,6 +37,7 @@ def download_bam(output_bam, extras):
 @R.mkdir(download_bam, R.formatter(), '{subpath[0][1]}/fastqc')
 @R.transform(download_bam, R.formatter(), [
     '{subpath[0][1]}/fastqc/cba.html',
+    '{subpath[0][1]}/fastqc/cba.zip',
     '{subpath[0][1]}/fastqc/fastqc.log',
     '{subpath[0][1]}/fastqc/fastqc.COMPLETE'
 ])
@@ -48,6 +49,8 @@ def fastqc(input_bam, outputs):
     cmd = ("fastqc -o {output_dir} -t {num_cpus} {input_bam} 2>&1 "
            "| tee {log} "
            "&& mv -v {output_dir}/*.html {output_dir}/cba.html "
+           "| tee -a {log} "
+           "&& mv -v {output_dir}/*.zip  {output_dir}/cba.zip "
            "| tee -a {log}".format(**locals()))
     U.execute(cmd, flag)
 
@@ -67,8 +70,8 @@ def upload(inputs, outputs):
     auth_gsutil=CONFIG['auth_gsutil']
     bucket_dir = os.path.join(cfg['output_gs_bucket'], top_dir_name)
 
-    # no need to upload the zip file from fastqc, and input bam
-    re_files_to_exclude = '|'.join(['.*\.zip$', '.*\.bam$'])
+    # don't upload input bam
+    re_files_to_exclude = '|'.join([r'.*\.bam$'])
     cmd = ("{auth_gsutil} -m rsync -x '{re_files_to_exclude}' -r -d "
            "{top_dir} {bucket_dir}").format(**locals())
 

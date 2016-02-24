@@ -43,14 +43,14 @@ def download_bam(output_bam, extras):
 ])
 @U.timeit
 def fastqc(input_bam, outputs):
-    output_html, log, flag = outputs
+    output_html, output_zip, log, flag = outputs
     output_dir = os.path.dirname(output_html)
     num_cpus = CONFIG['num_cpus']
     cmd = ("fastqc -o {output_dir} -t {num_cpus} {input_bam} 2>&1 "
            "| tee {log} "
-           "&& mv -v {output_dir}/*.html {output_dir}/cba.html "
+           "&& mv -v {output_dir}/*.html {output_html} "
            "| tee -a {log} "
-           "&& mv -v {output_dir}/*.zip  {output_dir}/cba.zip "
+           "&& mv -v {output_dir}/*.zip  {output_zip} "
            "| tee -a {log}".format(**locals()))
     U.execute(cmd, flag)
 

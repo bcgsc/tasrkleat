@@ -3,11 +3,25 @@ MAINTAINER Zhuyi Xue <zxue.bcgsc@gmail.com>
 
 RUN apt-get update
 
-# # mpirun needs ssh to run successfully
-# # bc is from bsdmainutils, which is needed to run abyss
-# # check wheter crcmod is installed with "gsutil version -l"
+# from gsult help crcmod:
+# To compile and install crcmod:
+
+#   sudo apt-get install gcc python-dev python-setuptools
+#   sudo easy_install -U pip
+#   sudo pip uninstall crcmod
+#   sudo pip install -U crcmod
+
+# but:
+# Cannot uninstall requirement crcmod, not installed
+
+# mpirun needs ssh to run successfully
+# bc is from bsdmainutils, which is needed to run abyss
+# check wheter crcmod is installed with "gsutil version -l"
+# crcmod problem is fixed with the following setup.
 RUN apt-get -yf install \
     fastqc \
+    gcc \
+    python-dev \
     python-setuptools \
     && easy_install -U pip \
     && pip install -U crcmod colorlog ruffus

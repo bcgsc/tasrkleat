@@ -12,6 +12,11 @@ def parse_args():
               'e.g. gs://<bucket-name>/<some.bam>'))
 
     parser.add_argument(
+        '--input-gs-gtf', required=True,
+        help=('input gtf file from Google Cloud Storage (GCS), '
+              'e.g. gs://<bucket-name>/<some.gtf>'))
+
+    parser.add_argument(
         '-t', '--num-threads',
         help=('if not specified, will use the number of available cpus on '
               'the machine'))

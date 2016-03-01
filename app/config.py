@@ -6,9 +6,11 @@ from argsparser import parse_args
 
 
 def gen_config():
-    # project_id will be used to compose directory name in the final output
-    # result
-    project_id = 'for-ewan-polya'
+    project_id = os.environ.get('PROJECT_ID')
+    if project_id is None:
+        raise ValueError(
+            'No PROJECT_ID environmental variable found, analysis aborted.')
+        
     args = parse_args()
 
     config = {

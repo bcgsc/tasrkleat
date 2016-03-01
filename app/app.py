@@ -70,8 +70,7 @@ def bam2fastq(input_bam, outputs):
            "FASTQ={fq1} "
            "SECOND_END_FASTQ={fq2} "
            "UNPAIRED_FASTQ=discarded.fastq "
-           "| tee {log} "
-           "| tee -a {log}".format(**locals()))
+           "| tee {log} ".format(**locals()))
     U.execute(cmd, flag)
 
 # @R.mkdir(fastqc, R.formatter(), '{subpath[0][1]}/upload')

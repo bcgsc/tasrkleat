@@ -15,6 +15,7 @@ def gen_config():
 
     config = {
         'input_gs_bam': args.input_gs_bam,
+        'input_gs_gtf': args.input_gs_gtf,
         # authorized gsutil
         'auth_gsutil': 'gsutil -o Credentials:gs_oauth2_refresh_token=$(cat {0})'.format(args.refresh_token),
 

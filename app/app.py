@@ -33,6 +33,26 @@ def download_bam(output_bam, extras):
         log=log)
     U.execute(cmd, flag)
 
+# This task cannot be merged with download_bam because otherwise following
+# tasks (e.g. bam2fastq will take gtf as a bam file
+@R.mkdir(CONFIG['input_gs_gtf'], R.formatter(),
+         os.path.join(CONFIG['output_dir'], 'download_gtf'))
+@R.originate(
+    os.path.join(CONFIG['output_dir'], 'download_gtf', os.path.basename(CONFIG['input_gs_gtf'])),
+    # use extra param to store the flag filename
+    [os.path.join(CONFIG['output_dir'], 'download_gtf', 'download_gtf.log'),
+     os.path.join(CONFIG['output_dir'], 'download_gtf', 'download_gtf.COMPLETE')],
+)
+@U.timeit
+def download_gtf(output_gtf, extras):
+    log, flag = extras
+    cmd = ('{auth_gsutil} -m cp {gtf} {outdir} 2>&1 | tee {log}').format(
+        auth_gsutil=CONFIG['auth_gsutil'],
+        gtf=CONFIG['input_gs_gtf'],
+        outdir=os.path.dirname(output_gtf),
+        log=log)
+    U.execute(cmd, flag)
+
 
 @R.mkdir(download_bam, R.formatter(), '{subpath[0][1]}/bam2fastq')
 @R.transform(download_bam, R.formatter(), [

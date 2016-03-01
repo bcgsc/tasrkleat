@@ -3,7 +3,7 @@ import ruffus as R
 
 def parse_args():
     parser = R.cmdline.get_argparse(
-        description='tasrcloud',
+        description='bamqc',
         usage='require python-2.7.x')
 
     parser.add_argument(

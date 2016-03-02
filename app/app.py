@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import re
 
 import ruffus as R
 
@@ -138,6 +139,26 @@ def star_align(inputs, outputs):
         '&& mv -v {output_dir}/cba_Aligned.out.bam {out_bam} | tee -a {log} '
         .format(**locals()))
     U.execute(cmd, flag)
+
+
+
+@R.mkdir(star_align, R.formatter(), '{subpath[0][1]}/sort_bam')
+@R.transform(star_align, R.formatter(), [
+    '{subpath[0][1]}/sort_bam/cba.bam',
+    '{subpath[0][1]}/sort_bam/sort_bam.log',
+    '{subpath[0][1]}/sort_bam/sort_bam.COMPLETE'
+])
+@U.timeit
+def sort_bam(inputs, outputs):
+    input_bam, _, _ = inputs
+    output_bam, log, flag = outputs
+    output_bam_prefix = re.sub('\.bam$', '', output_bam)
+    num_cpus = CONFIG['num_cpus']
+    cmd = ('samtools sort -@ {num_cpus} {input_bam} {output_bam_prefix} '
+           '| tee {log} '.format(**locals()))
+    U.execute(cmd, flag)
+
+
 
 
 # @R.mkdir(fastqc, R.formatter(), '{subpath[0][1]}/upload')

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import re
 
 import ruffus as R
 
@@ -32,6 +31,7 @@ def download_bam(output_bam, extras):
         outdir=os.path.dirname(output_bam),
         log=log)
     U.execute(cmd, flag)
+
 
 # This task cannot be merged with download_bam because otherwise following
 # tasks (e.g. bam2fastq will take gtf as a bam file
@@ -91,6 +91,54 @@ def bam2fastq(input_bam, outputs):
            "UNPAIRED_FASTQ=discarded.fastq "
            "| tee {log} ".format(**locals()))
     U.execute(cmd, flag)
+
+
+@R.follows(download_gtf)
+@R.follows(download_star_index)
+@R.mkdir(bam2fastq, R.formatter(), '{subpath[0][1]}/star_align')
+@R.transform(bam2fastq, R.formatter(), [
+    '{subpath[0][1]}/star_align/cba.bam',
+    # star align output example, for now just the bam and Log.out are needed
+    # cba_Aligned.out.bam
+    # cba_Log.final.out
+    # cba_Log.out
+    # cba_Log.progress.out
+    # cba_SJ.out.tab
+    # cba__STARgenome
+    '{subpath[0][1]}/star_align/star_align.log',
+    '{subpath[0][1]}/star_align/star_align.COMPLETE'
+])
+@U.timeit
+def star_align(inputs, outputs):
+    fq1, fq2, _, _ = inputs
+    gtf = os.path.join(CONFIG['output_dir'], 'download_gtf',
+                       os.path.basename(CONFIG['input_gs_gtf']))
+    star_index = os.path.join(CONFIG['output_dir'], 'download_star_index',
+                              os.path.basename(CONFIG['input_gs_star_index']))
+    out_bam, log, flag = outputs
+    output_dir = os.path.dirname(outputs[0])
+    num_cpus = CONFIG['num_cpus']
+    cmd = (
+        'STAR '
+        '--runThreadN {num_cpus} '
+        '--sjdbGTFfile {gtf} '
+        '--sjdbOverhang 100 '
+        '--genomeDir {star_index}  '
+        '--readFilesIn {fq1} {fq2} '
+        '--alignIntronMin 30 '
+        '--alignIntronMax 500000 '
+        '--outFilterIntronMotifs RemoveNoncanonicalUnannotated '
+        '--outFilterMismatchNmax 10 '
+        '--outSAMstrandField intronMotif '
+        '--genomeLoad NoSharedMemory '
+        '--readMatesLengthsIn NotEqual '
+        '--outSAMtype BAM Unsorted '
+        '--outFileNamePrefix {output_dir}/cba_'
+        '&& mv -v {output_dir}/cba_Log.out {log} | tee -a {output_dir}/cba_Log.out '
+        '&& mv -v {output_dir}/cba_Aligned.out.bam {out_bam} | tee -a {log} '
+        .format(**locals()))
+    U.execute(cmd, flag)
+
 
 # @R.mkdir(fastqc, R.formatter(), '{subpath[0][1]}/upload')
 # @R.transform(fastqc, R.formatter(), [

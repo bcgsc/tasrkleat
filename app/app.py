@@ -288,6 +288,64 @@ def split_n_cigar_reads(inputs, outputs):
     U.execute(cmd, flag)
 
 
+@R.mkdir(split_n_cigar_reads, R.formatter(), '{subpath[0][1]}/call_haplotype')
+@R.transform(split_n_cigar_reads, R.formatter(), [
+    '{subpath[0][1]}/call_haplotype/cba.vcf',
+    '{subpath[0][1]}/call_haplotype/call_haplotype.log',
+    '{subpath[0][1]}/call_haplotype/call_haplotype.COMPLETE'
+])
+@U.timeit
+def call_haplotype(inputs, outputs):
+    input_bam,  _, _ = inputs
+    output_vcf, log, flag = outputs
+    num_cpus = CONFIG['num_cpus']
+    ref_fa = os.path.join(CONFIG['output_dir'], 'download_ref_fa',
+                          os.path.basename(CONFIG['input_gs_ref_fa']))
+    cmd = (
+        'java '
+        '-jar /GenomeAnalysisTK.jar '
+        '-T HaplotypeCaller '
+        '-R {ref_fa} '
+        '-I {input_bam} '
+        '-dontUseSoftClippedBases '
+        '-stand_call_conf 20.0 '
+        '-stand_emit_conf 20.0 '
+        '-o {output_vcf} '
+        '2>&1 | tee {log} '.format(**locals()))
+    U.execute(cmd, flag)
+
+
+@R.mkdir(call_haplotype, R.formatter(), '{subpath[0][1]}/filter_vcf')
+@R.transform(call_haplotype, R.formatter(), [
+    '{subpath[0][1]}/filter_vcf/cba.vcf',
+    '{subpath[0][1]}/filter_vcf/filter_vcf.log',
+    '{subpath[0][1]}/filter_vcf/filter_vcf.COMPLETE'
+])
+@U.timeit
+def filter_vcf(inputs, outputs):
+    input_vcf,  _, _ = inputs
+    output_vcf, log, flag = outputs
+    num_cpus = CONFIG['num_cpus']
+    ref_fa = os.path.join(CONFIG['output_dir'], 'download_ref_fa',
+                          os.path.basename(CONFIG['input_gs_ref_fa']))
+    cmd = (
+        'java '
+        '-jar /GenomeAnalysisTK.jar '
+        '-T VariantFiltration '
+        '-R {ref_fa} '
+        '-V {input_vcf} '
+        '-window 35 '
+        '-cluster 3 '
+        '-filterName FS '
+        '-filter "FS > 30.0" '
+        '-filterName QD '
+        '-filter "QD < 2.0" '
+        '-o {output_vcf}'
+        '2>&1 | tee {log} '.format(**locals()))
+    U.execute(cmd, flag)
+
+
+
 # @R.mkdir(fastqc, R.formatter(), '{subpath[0][1]}/upload')
 # @R.transform(fastqc, R.formatter(), [
 #     '{subpath[0][1]}/upload/upload.log',

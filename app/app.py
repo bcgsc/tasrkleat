@@ -85,11 +85,11 @@ def bam2fastq(input_bam, outputs):
     fq1, fq2, log, flag = outputs
     output_dir = os.path.dirname(fq1)
     num_cpus = CONFIG['num_cpus']
-    cmd = ("picard-tools SamToFastq I={input_bam} "
-           "FASTQ={fq1} "
-           "SECOND_END_FASTQ={fq2} "
-           "UNPAIRED_FASTQ=discarded.fastq "
-           "| tee {log} ".format(**locals()))
+    cmd = ('picard-tools SamToFastq I={input_bam} '
+           'FASTQ={fq1} '
+           'SECOND_END_FASTQ={fq2} '
+           'UNPAIRED_FASTQ=discarded.fastq '
+           '| tee {log} '.format(**locals()))
     U.execute(cmd, flag)
 
 

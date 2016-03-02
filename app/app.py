@@ -85,8 +85,10 @@ def index_ref_fa(input_fa, outputs):
     U.execute(cmd, flag)
 
 
+# dict has to be in the same directory of the fa file, so it has to run after
+# download_ref_fa
+@R.follows(download_ref_fa)
 @R.originate(
-    # dict has to be in the same directory of the fa file, too
     os.path.join(CONFIG['output_dir'], 'download_ref_fa', os.path.basename(CONFIG['input_gs_ref_dict'])),
     [os.path.join(CONFIG['output_dir'], 'download_ref_fa', 'download_ref_dict.log'),
      os.path.join(CONFIG['output_dir'], 'download_ref_fa', 'download_ref_dict.COMPLETE')],

@@ -342,10 +342,9 @@ def filter_vcf(inputs, outputs):
         '-filter "FS > 30.0" '
         '-filterName QD '
         '-filter "QD < 2.0" '
-        '-o {output_vcf}'
+        '-o {output_vcf} '
         '2>&1 | tee {log} '.format(**locals()))
     U.execute(cmd, flag)
-
 
 
 # @R.mkdir(fastqc, R.formatter(), '{subpath[0][1]}/upload')

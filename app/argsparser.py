@@ -1,9 +1,11 @@
+#!/bin/env python
+
 import ruffus as R
 
 
 def parse_args():
     parser = R.cmdline.get_argparse(
-        description='bamqc',
+        description='variant-call',
         usage='require python-2.7.x')
 
     parser.add_argument(
@@ -15,6 +17,10 @@ def parse_args():
         '--input-gs-gtf', required=True,
         help=('input gtf file from Google Cloud Storage (GCS), '
               'e.g. gs://<bucket-name>/<some.gtf>'))
+
+    parser.add_argument(
+        '--input-gs-star-index', required=True,
+        help='dir of star index location')
 
     parser.add_argument(
         '-t', '--num-threads',

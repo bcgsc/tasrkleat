@@ -54,6 +54,25 @@ def download_gtf(output_gtf, extras):
     U.execute(cmd, flag)
 
 
+@R.mkdir(CONFIG['input_gs_star_index'], R.formatter(),
+         os.path.join(CONFIG['output_dir'], 'download_star_index'))
+@R.originate(
+    os.path.join(CONFIG['output_dir'], 'download_star_index', os.path.basename(CONFIG['input_gs_star_index'])),
+    # use extra param to store the flag filename
+    [os.path.join(CONFIG['output_dir'], 'download_star_index', 'download_star_index.log'),
+     os.path.join(CONFIG['output_dir'], 'download_star_index', 'download_star_index.COMPLETE')],
+)
+@U.timeit
+def download_star_index(output_star_index, extras):
+    log, flag = extras
+    cmd = ('{auth_gsutil} -m cp -r {star_index} {outdir} 2>&1 | tee {log}').format(
+        auth_gsutil=CONFIG['auth_gsutil'],
+        star_index=CONFIG['input_gs_star_index'],
+        outdir=os.path.dirname(output_star_index),
+        log=log)
+    U.execute(cmd, flag)
+
+
 @R.mkdir(download_bam, R.formatter(), '{subpath[0][1]}/bam2fastq')
 @R.transform(download_bam, R.formatter(), [
     '{subpath[0][1]}/bam2fastq/cba_1.fastq',

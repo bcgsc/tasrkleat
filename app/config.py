@@ -18,6 +18,7 @@ def gen_config():
         'input_gs_gtf': args.input_gs_gtf,
         'input_gs_star_index': args.input_gs_star_index,
         'input_gs_ref_fa': args.input_gs_ref_fa,
+        'input_gs_ref_dict': args.input_gs_ref_dict,
         # authorized gsutil
         'auth_gsutil': 'gsutil -o Credentials:gs_oauth2_refresh_token=$(cat {0})'.format(args.refresh_token),
 

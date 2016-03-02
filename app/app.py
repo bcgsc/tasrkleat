@@ -74,6 +74,36 @@ def download_ref_fa(output_ref_fa, extras):
     U.execute(cmd, flag)
 
 
+@R.transform(download_ref_fa, R.formatter(), [
+    # fai has to be saved to the same directory for use
+    '{subpath[0][1]}/download_ref_fa/{basename[0]}.fa.fai',
+    '{subpath[0][1]}/download_ref_fa/index_ref_fa.log',
+    '{subpath[0][1]}/download_ref_fa/index_ref_fa.COMPLETE'
+])
+@U.timeit
+def index_ref_fa(input_fa, outputs):
+    _, log, flag = outputs      # the name of fai is not necessary to be stored
+    cmd = 'samtools faidx {input_fa} | tee {log}'.format(**locals())
+    U.execute(cmd, flag)
+
+
+@R.originate(
+    # dict has to be in the same directory of the fa file, too
+    os.path.join(CONFIG['output_dir'], 'download_ref_fa', os.path.basename(CONFIG['input_gs_ref_dict'])),
+    [os.path.join(CONFIG['output_dir'], 'download_ref_fa', 'download_ref_dict.log'),
+     os.path.join(CONFIG['output_dir'], 'download_ref_fa', 'download_ref_dict.COMPLETE')],
+)
+@U.timeit
+def download_ref_dict(output_ref_dict, extras):
+    log, flag = extras
+    cmd = ('{auth_gsutil} -m cp {ref_dict} {outdir} 2>&1 | tee {log}').format(
+        auth_gsutil=CONFIG['auth_gsutil'],
+        ref_dict=CONFIG['input_gs_ref_dict'],
+        outdir=os.path.dirname(output_ref_dict),
+        log=log)
+    U.execute(cmd, flag)
+
+
 @R.mkdir(CONFIG['input_gs_star_index'], R.formatter(),
          os.path.join(CONFIG['output_dir'], 'download_star_index'))
 @R.originate(

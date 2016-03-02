@@ -55,6 +55,25 @@ def download_gtf(output_gtf, extras):
     U.execute(cmd, flag)
 
 
+@R.mkdir(CONFIG['input_gs_ref_fa'], R.formatter(),
+         os.path.join(CONFIG['output_dir'], 'download_ref_fa'))
+@R.originate(
+    os.path.join(CONFIG['output_dir'], 'download_ref_fa', os.path.basename(CONFIG['input_gs_ref_fa'])),
+    # use extra param to store the flag filename
+    [os.path.join(CONFIG['output_dir'], 'download_ref_fa', 'download_ref_fa.log'),
+     os.path.join(CONFIG['output_dir'], 'download_ref_fa', 'download_ref_fa.COMPLETE')],
+)
+@U.timeit
+def download_ref_fa(output_ref_fa, extras):
+    log, flag = extras
+    cmd = ('{auth_gsutil} -m cp {ref_fa} {outdir} 2>&1 | tee {log}').format(
+        auth_gsutil=CONFIG['auth_gsutil'],
+        ref_fa=CONFIG['input_gs_ref_fa'],
+        outdir=os.path.dirname(output_ref_fa),
+        log=log)
+    U.execute(cmd, flag)
+
+
 @R.mkdir(CONFIG['input_gs_star_index'], R.formatter(),
          os.path.join(CONFIG['output_dir'], 'download_star_index'))
 @R.originate(

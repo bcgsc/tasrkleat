@@ -347,40 +347,55 @@ def filter_vcf(inputs, outputs):
     U.execute(cmd, flag)
 
 
-# @R.mkdir(fastqc, R.formatter(), '{subpath[0][1]}/upload')
-# @R.transform(fastqc, R.formatter(), [
-#     '{subpath[0][1]}/upload/upload.log',
-#     '{subpath[0][1]}/upload/upload.COMPLETE',
-# ])
-# @U.timeit
-# def upload(inputs, outputs):
-#     # e.g. /top_dir/first_subdir/second_subdir/somefile.log => /top_dir
-#     top_dir = re.search(r'/[^/]+', os.path.abspath(inputs[0])).group(0)
-#     # e.g. /top_dir => top_dir
-#     top_dir_name = top_dir.lstrip('/')
-#     log, flag = outputs
-#     cfg = CONFIG['steps']['upload']
-#     auth_gsutil=CONFIG['auth_gsutil']
-#     bucket_dir = os.path.join(cfg['output_gs_bucket'], top_dir_name)
+@R.mkdir(filter_vcf, R.formatter(), '{subpath[0][1]}/upload')
+@R.transform(filter_vcf, R.formatter(), [
+    '{subpath[0][1]}/upload/upload.log',
+    '{subpath[0][1]}/upload/upload.COMPLETE',
+])
+@U.timeit
+def upload(inputs, outputs):
+    # e.g. /top_dir/first_subdir/second_subdir/somefile.log => /top_dir
+    top_dir = re.search(r'/[^/]+', os.path.abspath(inputs[0])).group(0)
+    # e.g. /top_dir => top_dir
+    top_dir_name = top_dir.lstrip('/')
+    log, flag = outputs
+    cfg = CONFIG['steps']['upload']
+    auth_gsutil=CONFIG['auth_gsutil']
+    bucket_dir = os.path.join(cfg['output_gs_bucket'], top_dir_name)
 
-#     # don't upload input bam
-#     re_files_to_exclude = '|'.join([r'.*\.bam$'])
-#     cmd = ("{auth_gsutil} -m rsync -x '{re_files_to_exclude}' -r "
-#            "{top_dir} {bucket_dir}").format(**locals())
+    # Currently, there is no include, so has to exclude as many big files as
+    # possible,
+    # http://stackoverflow.com/questions/34111297/how-to-include-file-in-gsutil-rsync
+    re_files_to_exclude = '|'.join([r'.*\.bam$',
+                                    r'.*\.gtf$',
+                                    r'.*\.fastq$',
+                                    r'.*\.fq$',
+                                    r'.*\.fasta$',
+                                    r'.*\.fa$',
+                                    r'.*\.fai$',
+                                    r'.*\.dict$',
+                                    ] + map(
+            os.path.basename, [CONFIG[_] for _ in ['input_gs_bam',
+                                                   'input_gs_gtf',
+                                                   'input_gs_ref_fa',
+                                                   'input_gs_ref_dict']]) + [
+            # ignore the whole directory
+            r'.*{0}.*'.format(os.path.basename(CONFIG['input_gs_star_index']))
+            ]
+                                   )
+    cmd = ("{auth_gsutil} -m rsync -x '{re_files_to_exclude}' -r "
+           "{top_dir} {bucket_dir} "
+           "2>&1 | tee {log}").format(**locals())
+    U.execute(cmd, flag)
 
-#     # -x '' would be invalid and cause error
-#     # cmd = ("{auth_gsutil} -m rsync -r -d "
-#     #        "{top_dir} {bucket_dir}").format(**locals())
 
-#     U.execute(cmd, flag)
+@R.follows(upload)
+@U.timeit
+def cleanup():
+    """remove the output folder to save disk space"""
+    cmd = "rm -rfv {0}".format(CONFIG['output_dir'])
+    U.execute(cmd)
 
-
-# @R.follows(upload)
-# @U.timeit
-# def cleanup():
-#     """remove the output folder to save disk space"""
-#     cmd = "rm -rfv {0}".format(CONFIG['output_dir'])
-#     U.execute(cmd)
 
 if __name__ == "__main__":
     R.pipeline_run()

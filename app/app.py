@@ -40,7 +40,6 @@ def download_bam(output_bam, extras):
          os.path.join(CONFIG['output_dir'], 'download_gtf'))
 @R.originate(
     os.path.join(CONFIG['output_dir'], 'download_gtf', os.path.basename(CONFIG['input_gs_gtf'])),
-    # use extra param to store the flag filename
     [os.path.join(CONFIG['output_dir'], 'download_gtf', 'download_gtf.log'),
      os.path.join(CONFIG['output_dir'], 'download_gtf', 'download_gtf.COMPLETE')],
 )
@@ -59,7 +58,6 @@ def download_gtf(output_gtf, extras):
          os.path.join(CONFIG['output_dir'], 'download_ref_fa'))
 @R.originate(
     os.path.join(CONFIG['output_dir'], 'download_ref_fa', os.path.basename(CONFIG['input_gs_ref_fa'])),
-    # use extra param to store the flag filename
     [os.path.join(CONFIG['output_dir'], 'download_ref_fa', 'download_ref_fa.log'),
      os.path.join(CONFIG['output_dir'], 'download_ref_fa', 'download_ref_fa.COMPLETE')],
 )
@@ -108,7 +106,6 @@ def download_ref_dict(output_ref_dict, extras):
          os.path.join(CONFIG['output_dir'], 'download_star_index'))
 @R.originate(
     os.path.join(CONFIG['output_dir'], 'download_star_index', os.path.basename(CONFIG['input_gs_star_index'])),
-    # use extra param to store the flag filename
     [os.path.join(CONFIG['output_dir'], 'download_star_index', 'download_star_index.log'),
      os.path.join(CONFIG['output_dir'], 'download_star_index', 'download_star_index.COMPLETE')],
 )
@@ -260,8 +257,35 @@ def mark_dup(inputs, outputs):
     U.execute(cmd, flag)
 
 
-
-
+@R.follows(index_ref_fa)          # this guarantees @R.follows(download_ref_fa)
+@R.follows(download_ref_dict)
+@R.mkdir(mark_dup, R.formatter(), '{subpath[0][1]}/split_n_cigar_reads')
+@R.transform(mark_dup, R.formatter(), [
+    '{subpath[0][1]}/split_n_cigar_reads/cba.bam',
+    '{subpath[0][1]}/split_n_cigar_reads/split_n_cigar_reads.log',
+    '{subpath[0][1]}/split_n_cigar_reads/split_n_cigar_reads.COMPLETE'
+])
+@U.timeit
+def split_n_cigar_reads(inputs, outputs):
+    input_bam, _, _, _ = inputs
+    output_bam, log, flag = outputs
+    output_bam_prefix = re.sub('\.bam$', '', output_bam)
+    num_cpus = CONFIG['num_cpus']
+    ref_fa = os.path.join(CONFIG['output_dir'], 'download_ref_fa',
+                          os.path.basename(CONFIG['input_gs_ref_fa']))
+    cmd = (
+        'java '
+        '-jar /GenomeAnalysisTK.jar '
+        '-T SplitNCigarReads '
+        '-R {ref_fa} '
+        '-I {input_bam} '
+        '-o {output_bam} '
+        '-rf ReassignOneMappingQuality '
+        '-RMQF 255 '
+        '-RMQT 60 '
+        '-U ALLOW_N_CIGAR_READS '
+        '| tee {log} '.format(**locals()))
+    U.execute(cmd, flag)
 
 
 # @R.mkdir(fastqc, R.formatter(), '{subpath[0][1]}/upload')

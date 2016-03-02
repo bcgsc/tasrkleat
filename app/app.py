@@ -81,7 +81,7 @@ def download_ref_fa(output_ref_fa, extras):
 @U.timeit
 def index_ref_fa(input_fa, outputs):
     _, log, flag = outputs      # the name of fai is not necessary to be stored
-    cmd = 'samtools faidx {input_fa} | tee {log}'.format(**locals())
+    cmd = 'samtools faidx {input_fa} 2>&1 | tee {log}'.format(**locals())
     U.execute(cmd, flag)
 
 
@@ -136,7 +136,7 @@ def bam2fastq(input_bam, outputs):
            'FASTQ={fq1} '
            'SECOND_END_FASTQ={fq2} '
            'UNPAIRED_FASTQ=discarded.fastq '
-           '| tee {log} '.format(**locals()))
+           '2>&1 | tee {log} '.format(**locals()))
     U.execute(cmd, flag)
 
 
@@ -181,8 +181,8 @@ def star_align(inputs, outputs):
         '--readMatesLengthsIn NotEqual '
         '--outSAMtype BAM Unsorted '
         '--outFileNamePrefix {output_dir}/cba_'
-        '&& mv -v {output_dir}/cba_Log.out {log} | tee -a {output_dir}/cba_Log.out '
-        '&& mv -v {output_dir}/cba_Aligned.out.bam {out_bam} | tee -a {log} '
+        '&& mv -v {output_dir}/cba_Log.out {log} 2>&1 | tee -a {output_dir}/cba_Log.out '
+        '&& mv -v {output_dir}/cba_Aligned.out.bam {out_bam} 2>&1 | tee -a {log} '
         .format(**locals()))
     U.execute(cmd, flag)
 
@@ -201,7 +201,7 @@ def sort_bam(inputs, outputs):
     output_bam_prefix = re.sub('\.bam$', '', output_bam)
     num_cpus = CONFIG['num_cpus']
     cmd = ('samtools sort -@ {num_cpus} {input_bam} {output_bam_prefix} '
-           '| tee {log} '.format(**locals()))
+           '2>&1 | tee {log} '.format(**locals()))
     U.execute(cmd, flag)
 
 
@@ -228,7 +228,7 @@ def add_rg(inputs, outputs):
         'RGPU=machine '
         'RGSM=sample '
         'TMP_DIR=/tmp '
-        '| tee {log}'.format(**locals()))
+        '2>&1 | tee {log}'.format(**locals()))
     U.execute(cmd, flag)
 
 
@@ -253,7 +253,7 @@ def mark_dup(inputs, outputs):
         'VALIDATION_STRINGENCY=SILENT '
         'M={output_metrics} '
         'TMP_DIR=/tmp '
-        '| tee {log}'.format(**locals()))
+        '2>&1 | tee {log}'.format(**locals()))
     U.execute(cmd, flag)
 
 
@@ -284,7 +284,7 @@ def split_n_cigar_reads(inputs, outputs):
         '-RMQF 255 '
         '-RMQT 60 '
         '-U ALLOW_N_CIGAR_READS '
-        '| tee {log} '.format(**locals()))
+        '2>&1 | tee {log} '.format(**locals()))
     U.execute(cmd, flag)
 
 

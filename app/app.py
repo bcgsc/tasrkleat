@@ -159,6 +159,60 @@ def sort_bam(inputs, outputs):
     U.execute(cmd, flag)
 
 
+@R.mkdir(sort_bam, R.formatter(), '{subpath[0][1]}/add_rg')
+@R.transform(sort_bam, R.formatter(), [
+    '{subpath[0][1]}/add_rg/cba.bam',
+    '{subpath[0][1]}/add_rg/add_rg.log',
+    '{subpath[0][1]}/add_rg/add_rg.COMPLETE'
+])
+@U.timeit
+def add_rg(inputs, outputs):
+    input_bam, _, _ = inputs
+    output_bam, log, flag = outputs
+    output_bam_prefix = re.sub('\.bam$', '', output_bam)
+    num_cpus = CONFIG['num_cpus']
+    cmd = (
+        'picard-tools AddOrReplaceReadGroups '
+        'I={input_bam} '
+        'O={output_bam} '
+        'SO=coordinate '
+        'RGID=id '
+        'RGLB=library '
+        'RGPL=platform '
+        'RGPU=machine '
+        'RGSM=sample '
+        'TMP_DIR=/tmp '
+        '| tee {log}'.format(**locals()))
+    U.execute(cmd, flag)
+
+
+@R.mkdir(add_rg, R.formatter(), '{subpath[0][1]}/mark_dup')
+@R.transform(add_rg, R.formatter(), [
+    '{subpath[0][1]}/mark_dup/cba.bam',
+    '{subpath[0][1]}/mark_dup/cba.metrics',
+    '{subpath[0][1]}/mark_dup/mark_dup.log',
+    '{subpath[0][1]}/mark_dup/mark_dup.COMPLETE'
+])
+@U.timeit
+def mark_dup(inputs, outputs):
+    input_bam, _, _ = inputs
+    output_bam, output_metrics, log, flag = outputs
+    output_bam_prefix = re.sub('\.bam$', '', output_bam)
+    num_cpus = CONFIG['num_cpus']
+    cmd = (
+        'picard-tools MarkDuplicates '
+        'I={input_bam} '
+        'O={output_bam} '
+        'CREATE_INDEX=true '
+        'VALIDATION_STRINGENCY=SILENT '
+        'M={output_metrics} '
+        'TMP_DIR=/tmp '
+        '| tee {log}'.format(**locals()))
+    U.execute(cmd, flag)
+
+
+
+
 
 
 # @R.mkdir(fastqc, R.formatter(), '{subpath[0][1]}/upload')

@@ -50,7 +50,7 @@ RUN rm -rf /tmp/STAR \
        gcc-multilib
 
 
-ENV PROJECT_ID=for-ewan-polya
+ENV PROJECT_ID=polya
 ENV PATH=/${PROJECT_ID}:${PATH}
 RUN mkdir /${PROJECT_ID}
 ADD app/*.py /${PROJECT_ID}/

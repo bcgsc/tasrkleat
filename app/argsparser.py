@@ -23,10 +23,6 @@ def parse_args():
         help='dir of star index location')
 
     parser.add_argument(
-        '--input-gs-ref-fa', required=True,
-        help='location of the reference genome in fasta format (e.g. hg19.fa)')
-
-    parser.add_argument(
         '-t', '--num-threads',
         help=('if not specified, will use the number of available cpus on '
               'the machine'))

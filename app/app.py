@@ -54,37 +54,6 @@ def download_gtf(output_gtf, extras):
     U.execute(cmd, flag)
 
 
-@R.mkdir(CONFIG['input_gs_ref_fa'], R.formatter(),
-         os.path.join(CONFIG['output_dir'], 'download_ref_fa'))
-@R.originate(
-    os.path.join(CONFIG['output_dir'], 'download_ref_fa', os.path.basename(CONFIG['input_gs_ref_fa'])),
-    [os.path.join(CONFIG['output_dir'], 'download_ref_fa', 'download_ref_fa.log'),
-     os.path.join(CONFIG['output_dir'], 'download_ref_fa', 'download_ref_fa.COMPLETE')],
-)
-@U.timeit
-def download_ref_fa(output_ref_fa, extras):
-    log, flag = extras
-    cmd = ('{auth_gsutil} -m cp {ref_fa} {outdir} 2>&1 | tee {log}').format(
-        auth_gsutil=CONFIG['auth_gsutil'],
-        ref_fa=CONFIG['input_gs_ref_fa'],
-        outdir=os.path.dirname(output_ref_fa),
-        log=log)
-    U.execute(cmd, flag)
-
-
-@R.transform(download_ref_fa, R.formatter(), [
-    # fai has to be saved to the same directory for use
-    '{subpath[0][1]}/download_ref_fa/{basename[0]}.fa.fai',
-    '{subpath[0][1]}/download_ref_fa/index_ref_fa.log',
-    '{subpath[0][1]}/download_ref_fa/index_ref_fa.COMPLETE'
-])
-@U.timeit
-def index_ref_fa(input_fa, outputs):
-    _, log, flag = outputs      # the name of fai is not necessary to be stored
-    cmd = 'samtools faidx {input_fa} 2>&1 | tee {log}'.format(**locals())
-    U.execute(cmd, flag)
-
-
 @R.mkdir(CONFIG['input_gs_star_index'], R.formatter(),
          os.path.join(CONFIG['output_dir'], 'download_star_index'))
 @R.originate(

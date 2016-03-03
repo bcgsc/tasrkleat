@@ -401,3 +401,4 @@ if __name__ == "__main__":
     R.pipeline_printout_graph("flowchart.svg", "svg", ['cleanup'],
                               user_colour_scheme = {"colour_scheme_index" :6})
     R.pipeline_run()
+

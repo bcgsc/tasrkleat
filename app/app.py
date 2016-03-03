@@ -307,6 +307,7 @@ def call_haplotype(inputs, outputs):
         'java '
         '-jar /GenomeAnalysisTK.jar '
         '-T HaplotypeCaller '
+        '-nct {num_cpus} '
         '-R {ref_fa} '
         '-I {input_bam} '
         '-dontUseSoftClippedBases '

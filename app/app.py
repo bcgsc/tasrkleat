@@ -214,11 +214,8 @@ def upload(inputs, outputs):
                                     r'.*\.fa$',
                                     r'.*\.fai$',
                                     r'.*\.dict$',
-                                    ] + map(
-            os.path.basename, [CONFIG[_] for _ in ['input_gs_bam',
-                                                   'input_gs_gtf',
-                                                   'input_gs_ref_fa',
-                                                   'input_gs_ref_dict']]) + [
+                                    ] + map(os.path.basename,
+                                            [CONFIG['input_gs_bam']]) + [
             # ignore the whole directory
             r'.*{0}.*'.format(os.path.basename(CONFIG['input_gs_star_index']))
             ]

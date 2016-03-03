@@ -49,13 +49,13 @@ RUN rm -rf /tmp/STAR \
        build-essential \
        gcc-multilib
 
+RUN apt-get install -y graphviz
 
 ENV PROJECT_ID=polya
 ENV PATH=/${PROJECT_ID}:${PATH}
 RUN mkdir /${PROJECT_ID}
 ADD app/*.py /${PROJECT_ID}/
 
-RUN apt-get install -y graphviz
 
 # CMD value should be valid json string, must use double quotes
 # example CMD

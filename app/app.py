@@ -189,7 +189,7 @@ def upload(inputs, outputs):
             r'.*{0}.*'.format(os.path.basename(CONFIG['input_gs_star_index']))
             ]
                                    )
-    cmd = ("{auth_gsutil} -m rsync -x '{re_files_to_exclude}' -r "
+    cmd = ("{auth_gsutil} -m rsync -c -x '{re_files_to_exclude}' -r "
            "{top_dir} {bucket_dir} "
            "2>&1 | tee {log}").format(**locals())
     U.execute(cmd, flag)

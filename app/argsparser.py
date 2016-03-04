@@ -14,15 +14,6 @@ def parse_args():
               'e.g. gs://<bucket-name>/<some.bam>'))
 
     parser.add_argument(
-        '--input-gs-gtf', required=True,
-        help=('input gtf file from Google Cloud Storage (GCS), '
-              'e.g. gs://<bucket-name>/<some.gtf>'))
-
-    parser.add_argument(
-        '--input-gs-star-index', required=True,
-        help='dir of star index location')
-
-    parser.add_argument(
         '--input-gs-ref-fa', required=True,
         help='location of the reference genome in fasta format (e.g. hg19.fa)')
 

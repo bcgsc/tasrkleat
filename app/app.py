@@ -183,12 +183,12 @@ def upload(inputs, outputs):
                                     r'.*\.fa$',
                                     r'.*\.fai$',
                                     r'.*\.dict$',
-                                    ] + map(os.path.basename,
-                                            [CONFIG['input_gs_bam']]) + [
-            # ignore the whole directory
-            r'.*{0}.*'.format(os.path.basename(CONFIG['input_gs_star_index']))
-            ]
-                                   )
+                                    ] + map(
+            lambda x: r'.*{0}.*$'.format(os.path.basename(x)), [
+                CONFIG['input_gs_bam'],
+                CONFIG['input_gs_star_index'],
+                ]
+            ))
     cmd = ("{auth_gsutil} -m rsync -c -x '{re_files_to_exclude}' -r "
            "{top_dir} {bucket_dir} "
            "2>&1 | tee {log}").format(**locals())

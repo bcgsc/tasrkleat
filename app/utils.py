@@ -24,7 +24,8 @@ def timeit(f):
         bt = time.time()
         r = f(*args, **kwargs)
         et = time.time()
-        logger.info("Time spent on {0}: {1:.2f}s".format(f.__name__, et - bt))
+        delta_t = datetime.timedelta(seconds=(et - bt))
+        logger.info("Time spent on {0}: {1}".format(f.__name__, delta_t))
         return r
     return new_f
 

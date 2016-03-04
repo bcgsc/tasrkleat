@@ -91,8 +91,7 @@ def download_ref_dict(output_ref_dict, extras):
     '{subpath[0][1]}/add_rg/add_rg.COMPLETE'
 ])
 @U.timeit
-def add_rg(inputs, outputs):
-    input_bam, _, _ = inputs
+def add_rg(input_bam, outputs):
     output_bam, log, flag = outputs
     output_bam_prefix = re.sub('\.bam$', '', output_bam)
     num_cpus = CONFIG['num_cpus']

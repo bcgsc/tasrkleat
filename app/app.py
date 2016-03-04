@@ -204,6 +204,6 @@ def cleanup():
 
 
 if __name__ == "__main__":
-    R.pipeline_printout_graph("flowchart.svg", "svg", ['cleanup'],
+    R.pipeline_printout_graph("flowchart.svg", "svg", ['upload'],
                               user_colour_scheme = {"colour_scheme_index" :6})
     R.pipeline_run()

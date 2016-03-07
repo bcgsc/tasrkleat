@@ -51,16 +51,16 @@ RUN rm -rf /tmp/STAR \
 
 RUN apt-get install -y graphviz
 
-ENV PROJECT_ID=polya
+ENV PROJECT_ID=gatk
 ENV PATH=/${PROJECT_ID}:${PATH}
 RUN mkdir /${PROJECT_ID}
 ADD app/*.py /${PROJECT_ID}/
 
-# CMD value should be valid json string, must use double quotes
-# example CMD
+
 # CMD ["app.py", \
 #      "--input-gs-bam", "gs://some-data-bucket/test.bam", \
+#      "--input-gs-ref-fa", "gs://path/to/hg19.fa" \
+#      "--input-gs-ref-dict", "gs://path/to/hg19.dict" \
 #      "--upload-gs-bucket", "gs://some-result-bucket", \
-#      "-t", "4",
 #      "--refresh-token", "/refresh-token/refresh-token" \
 #     ]

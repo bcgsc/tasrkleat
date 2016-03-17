@@ -24,9 +24,9 @@ RUN pip install \
     pysam==0.8.2.1 \
     pybedtools==0.6.2
 
-RUN apt-get install parallel
+RUN apt-get install -y parallel vcftools
 
-ENV PROJECT_ID=mpileup-hexmer-snv
+ENV PROJECT_ID=mpileup-hexamer-snv
 ENV PATH=/${PROJECT_ID}:${PATH}
 RUN mkdir /${PROJECT_ID}
 ADD app/*.py /${PROJECT_ID}/

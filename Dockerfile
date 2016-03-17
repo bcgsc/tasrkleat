@@ -24,6 +24,8 @@ RUN pip install \
     pysam==0.8.2.1 \
     pybedtools==0.6.2
 
+RUN apt-get install parallel
+
 ENV PROJECT_ID=mpileup-hexmer-snv
 ENV PATH=/${PROJECT_ID}:${PATH}
 RUN mkdir /${PROJECT_ID}

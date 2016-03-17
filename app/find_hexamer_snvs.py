@@ -326,17 +326,25 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 def main():
     args = parse_args()
     events = []
     if os.path.getsize(args.vcf) > 0:
         input_vcf = pysam.VariantFile(args.vcf)
 
-        filtered_vcf = '%s/%s_filtered.vcf' % (os.path.dirname(os.path.abspath(args.vcf)),
-                                               os.path.splitext(os.path.basename(args.vcf))[0])
+        filtered_vcf = '%s/%s_filtered.vcf' % (
+            os.path.dirname(os.path.abspath(args.outfile)),
+            os.path.splitext(os.path.basename(args.vcf))[0])
+
         fasta = pysam.FastaFile(args.genome_fasta)
     
-        events = filter_vcf(input_vcf, args.min_dp, args.min_alt_fraction, out_file=filtered_vcf)
+        events = filter_vcf(
+            input_vcf,
+            args.min_dp,
+            args.min_alt_fraction,
+            out_file=filtered_vcf)
+
         print 'filtered:%s' % len(events)
 
         associate_utr(filtered_vcf, args.utr3, events)

@@ -14,11 +14,12 @@ def gen_config():
 
     config = {
         'input_bam': args.input_bam,
+        'num_cpus': args.num_threads,
 
         # there is no need to put the input file inside the steps configuration
         # since it will be passed along by ruffus
         'steps': {
-            'mpileup_vcf': {
+            'gen_parallel_cmd': {
                 'ref_fa': args.input_ref_fa
             },
 
@@ -29,12 +30,6 @@ def gen_config():
         }
 
     }
-        # 'input_gff': args.ref_gff,
-
-    if args.num_threads:
-        config['num_cpus'] = args.num_threads
-    else:
-        config['num_cpus'] = multiprocessing.cpu_count()
 
     config['output_dir'] = os.path.join(
         # use - instead of _ to avoid confusion because when downloading

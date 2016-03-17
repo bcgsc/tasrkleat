@@ -58,11 +58,11 @@ def mpileup_vcf(input_sh, output_vcfs):
 @R.mkdir(mpileup_vcf, R.formatter(), '{subpath[0][1]}/find_hexamer_snvs')
 @R.transform(mpileup_vcf, R.formatter(), [
     '{subpath[0][1]}/find_hexamer_snvs/{basename[0]}.tsv',
-    # '{subpath[0][1]}/find_hexamer_snvs/{basename[0]}.sorted_filtered.vcf'
+    # '{subpath[0][1]}/find_hexamer_snvs/{basename[0]}.sorted_filtered.vcf']
 ])
 @U.timeit
 def find_hexamer_snvs(input_vcf, outputs):
-    output_tsv, _ = outputs
+    output_tsv = outputs[0]
     cfg = CONFIG['steps']['find_hexamer_snvs']
     cfg.update(locals())
     cmd = ('find_hexamer_snvs.py '
@@ -74,7 +74,7 @@ def find_hexamer_snvs(input_vcf, outputs):
 
 
 def sort_key(val):
-    # e.g. val /experiment/mpileup-hexmer-snv-results/find_hexamer_snvs/9:100000001-141213431.tsv
+    # e.g. val /experiment/mpileup-hexmer-snv-results/find_hexamer_snvs/9:100000001-141213431.{vcf,tsv}
     base = os.path.basename(val).split(':')[0]
     try:
         res = int(base)
@@ -83,15 +83,27 @@ def sort_key(val):
     return res
 
 
-@R.mkdir(find_hexamer_snvs, R.formatter(),
-    os.path.join(CONFIG['output_dir'], 'merge_tsv'))
-@R.merge(find_hexamer_snvs,
-    os.path.join(CONFIG['output_dir'], 'merge_tsv', 'merged.tsv'),
+@R.mkdir(mpileup_vcf, R.formatter(),
+    os.path.join(CONFIG['output_dir'], 'merge_vcfs'))
+@R.merge(mpileup_vcf,
+    os.path.join(CONFIG['output_dir'], 'merge_vcfs', 'merged.vcf'),
 )
 @U.timeit
-def collate(input_tsvs, output_tsv):
+def merge_vcfs(input_vcfs, output_vcf):
+    input_vcfs = ' '.join(sorted(input_vcfs, key=sort_key))
+    cmd = 'vcf-concat {input_vcfs} > {output_vcf}'.format(**locals())
+    U.execute(cmd)
+
+
+@R.mkdir(find_hexamer_snvs, R.formatter(),
+    os.path.join(CONFIG['output_dir'], 'merge_tsvs'))
+@R.merge(find_hexamer_snvs,
+    os.path.join(CONFIG['output_dir'], 'merge_tsvs', 'merged.tsv'),
+)
+@U.timeit
+def merge_tsvs(input_tsvs, output_tsv):
     with open(output_tsv, 'wt') as opf:
-        sorted_tsvs = sorted(itertools.chain(*input_tsvs), key=sort_key)
+        sorted_tsvs = sorted(list(itertools.chain(*input_tsvs)), key=sort_key)
         for k, tsv in enumerate(sorted_tsvs):
             logger.info('working on {0}'.format(tsv))
             with open(tsv) as inf:

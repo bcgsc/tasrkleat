@@ -114,7 +114,7 @@ def ioselect(proc):
             if fd == proc.stderr.fileno():
                 line = proc.stderr.readline()
                 if line:
-                    logger.info('stderr: ' + line.rstrip())
+                    logger.warning('stderr: ' + line.rstrip())
 
         # check if child process has terminated
         # https://docs.python.org/3/library/subprocess.html#subprocess.Popen.poll

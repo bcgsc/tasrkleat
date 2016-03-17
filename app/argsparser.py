@@ -1,6 +1,7 @@
 #!/bin/env python
 
 import ruffus as R
+import multiprocessing
 
 
 def parse_args():
@@ -21,7 +22,7 @@ def parse_args():
         help='reference gff file')
 
     parser.add_argument(
-        '-t', '--num-threads',
+        '-t', '--num-threads', default=multiprocessing.cpu_count(),
         help=('if not specified, will use the number of available cpus on '
               'the machine'))
 

@@ -1,5 +1,4 @@
 import os
-import re
 import multiprocessing
 
 from argsparser import parse_args
@@ -37,14 +36,10 @@ def gen_config():
     else:
         config['num_cpus'] = multiprocessing.cpu_count()
 
-    # trying to mimic the directory hierarchy as the input by remove gs://
-    # at the beginning and .bam at the end of the url
-    config['prefix'] = re.sub('\.bam$', '', config['input_bam'])
-
     config['output_dir'] = os.path.join(
         # use - instead of _ to avoid confusion because when downloading
         # the zip from GCS, / will replaced with _
-        os.getcwd(), config['prefix'], '{0}-results'.format(project_id))
+        os.path.dirname(config['input_bam']), '{0}-results'.format(project_id))
 
     output_log_file = args.output_log
     if not output_log_file:

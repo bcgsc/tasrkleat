@@ -44,9 +44,9 @@ def mpileup_vcf(input_bam, output_vcf):
     U.execute(cmd)
 
 
-@R.mkdir(mpileup_vcf, R.formatter(), '{path[0]}/find_hexamer_snvs')
+@R.mkdir(mpileup_vcf, R.formatter(), '{subpath[0][1]}/find_hexamer_snvs')
 @R.transform(mpileup_vcf, R.formatter(),
-    '{path[0]}/find_hexamer_snvs/{basename[0]}.tsv',
+    '{subpath[0][1]}/find_hexamer_snvs/{basename[0]}.tsv',
 )
 @U.timeit
 def find_hexamer_snvs(input_vcf, output_tsv):

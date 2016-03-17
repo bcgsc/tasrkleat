@@ -63,30 +63,30 @@ def report(events, outfile):
               'hexamer_to_cleavage',
               'canonical_hexamer'
               )
-    out = open(outfile, 'w')
-    out.write('\t'.join(header) + '\n')
-    for event in events:
-        data = []
-        data.append(event['variant'].chrom)
-        data.append(event['variant'].pos)
-        data.append(event['variant'].ref)
-        data.append(event['allele'])
-        data.append(event['variant'].info['DP'])
-        data.append(event['allele_depth'])
-        data.append(event['allele_depth']*100/event['variant'].info['DP'])
-        data.append(event['zygosity'])
-        data.append(event['gene'])
-        data.append(event['transcript'])
-        data.append(event['transcript_strand'])
-        data.append(event['3UTR'])
-        data.append(event['A_to_G'])
-        data.append(event['hexamer_pos'])
-        data.append(event['hexamer_effect'])
-        data.append(event['hexamer_change'])
-        data.append(event['hexamer_to_cleavage'])
-        data.append(event['canonical_hexamer'])
-        out.write('\t'.join(map(str, data)) + '\n')
-    out.close()
+    with open(outfile, 'w') as opf:
+        opf.write('\t'.join(header) + '\n')
+        for event in events:
+            data = []
+            data.append(event['variant'].chrom)
+            data.append(event['variant'].pos)
+            data.append(event['variant'].ref)
+            data.append(event['allele'])
+            data.append(event['variant'].info['DP'])
+            data.append(event['allele_depth'])
+            data.append(event['allele_depth']*100/event['variant'].info['DP'])
+            data.append(event['zygosity'])
+            data.append(event['gene'])
+            data.append(event['transcript'])
+            data.append(event['transcript_strand'])
+            data.append(event['3UTR'])
+            data.append(event['A_to_G'])
+            data.append(event['hexamer_pos'])
+            data.append(event['hexamer_effect'])
+            data.append(event['hexamer_change'])
+            data.append(event['hexamer_to_cleavage'])
+            data.append(event['canonical_hexamer'])
+            opf.write('\t'.join(map(str, data)) + '\n')
+
     
 def associate_utr(filtered_vcf, utr_gff, events):
     """associate filtered SNVs to UTR"""

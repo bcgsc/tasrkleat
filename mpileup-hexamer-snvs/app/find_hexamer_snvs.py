@@ -4,6 +4,8 @@ import pysam
 import sys
 from pybedtools import BedTool
 import os
+import collections
+from sets import Set
 
 def reverse_complement(seq):
     """Reverse complements sequence string"""
@@ -56,52 +58,59 @@ def report(events, outfile):
               'transcript',
               'transcript_strand',
               '3UTR',
-              'A_to_G',
+              'base_change',
               'hexamer_pos',
               'hexamer_effect',
               'hexamer_change',
               'hexamer_to_cleavage',
               'canonical_hexamer'
               )
-    with open(outfile, 'w') as opf:
-        opf.write('\t'.join(header) + '\n')
-        for event in events:
-            data = []
-            data.append(event['variant'].chrom)
-            data.append(event['variant'].pos)
-            data.append(event['variant'].ref)
-            data.append(event['allele'])
-            data.append(event['variant'].info['DP'])
-            data.append(event['allele_depth'])
-            data.append(event['allele_depth']*100/event['variant'].info['DP'])
-            data.append(event['zygosity'])
-            data.append(event['gene'])
-            data.append(event['transcript'])
-            data.append(event['transcript_strand'])
-            data.append(event['3UTR'])
-            data.append(event['A_to_G'])
-            data.append(event['hexamer_pos'])
-            data.append(event['hexamer_effect'])
-            data.append(event['hexamer_change'])
-            data.append(event['hexamer_to_cleavage'])
-            data.append(event['canonical_hexamer'])
-            opf.write('\t'.join(map(str, data)) + '\n')
-
+    out = open(outfile, 'w')
+    out.write('\t'.join(header) + '\n')
+    for event in events:
+        data = []
+        data.append(event['variant'].chrom)
+        data.append(event['variant'].pos)
+        data.append(event['variant'].ref)
+        data.append(event['allele'])
+        data.append(event['variant'].info['DP'])
+        data.append(event['allele_depth'])
+        data.append(event['allele_depth']*100/event['variant'].info['DP'])
+        data.append(event['zygosity'])
+        data.append(event['gene'])
+        data.append(event['transcript'])
+        data.append(event['transcript_strand'])
+        data.append(event['3UTR'])
+        data.append(event['base_change'])
+        data.append(event['hexamer_pos'])
+        data.append(event['hexamer_effect'])
+        data.append(event['hexamer_change'])
+        data.append(event['hexamer_to_cleavage'])
+        data.append(event['canonical_hexamer'])
+        out.write('\t'.join(map(str, data)) + '\n')
+    out.close()
     
 def associate_utr(filtered_vcf, utr_gff, events):
     """associate filtered SNVs to UTR"""
+    def in_opposing_transcripts(olaps):
+        strands = Set([olap[2] for olap in olaps])
+        if len(strands) == 1:
+            return False
+        else:
+            return True
+
     filtered_bed = BedTool(filtered_vcf)
     utr_bed = BedTool(utr_gff)
     
-    utr_olapped = {}
-    for olap in filtered_bed.intersect(utr_bed, wb=True).saveas('tmp.bed'):
+    utr_olapped = collections.defaultdict(list)
+    for olap in filtered_bed.intersect(utr_bed, wb=True):
         utr_start = int(olap[13])
         utr_end = int(olap[14])
         transcript_strand = olap[16]
         transcript, gene = olap[18].split('::')
         
         pos = '%s:%s' % (olap[0], olap[1])
-        utr_olapped[pos] = gene, transcript, transcript_strand, utr_start, utr_end
+        utr_olapped[pos].append([gene, transcript, transcript_strand, utr_start, utr_end])
         
     remove = []
     for i in range(len(events)):
@@ -109,18 +118,25 @@ def associate_utr(filtered_vcf, utr_gff, events):
         if not utr_olapped.has_key(pos):
             remove.append(i)
         else:
-            events[i]['gene'] = utr_olapped[pos][0]
-            events[i]['transcript'] = utr_olapped[pos][1]
-            events[i]['transcript_strand'] = utr_olapped[pos][2]
-            events[i]['3UTR'] = '%s:%s-%s' % (events[i]['variant'].chrom, utr_olapped[pos][3], utr_olapped[pos][4])
-            events[i]['utr_start'] = int(utr_olapped[pos][3])
-            events[i]['utr_end'] = int(utr_olapped[pos][4])
-            
-            if (events[i]['transcript_strand'] == '+' and events[i]['variant'].ref == 'A' and events[i]['allele'] == 'G') or\
-               (events[i]['transcript_strand'] == '-' and events[i]['variant'].ref == 'T' and events[i]['allele'] == 'C') :
-                events[i]['A_to_G'] = True
-            else:
-                events[i]['A_to_G'] = False                
+            if len(utr_olapped[pos]) > 1 and in_opposing_transcripts(utr_olapped[pos]):
+                remove.append(i)
+                continue
+            annots = []
+            for olap in utr_olapped[pos]:
+                if olap[2] == '+':
+                    base_change = '%s>%s' % (events[i]['variant'].ref, events[i]['allele'])
+                else:
+                    base_change = '%s>%s' % (reverse_complement(events[i]['variant'].ref), reverse_complement(events[i]['allele']))
+                annots.append({'gene': olap[0],
+                               'transcript': olap[1],
+                               'transcript_strand': olap[2],
+                               '3UTR': '%s:%s-%s' % (events[i]['variant'].chrom, olap[3], olap[4]),
+                               'utr_start': int(olap[3]),
+                               'utr_end': int(olap[4]),
+                               'base_change': base_change,
+                               })
+
+            events[i]['annots'] = annots
             
     for i in reversed(remove):
         del events[i]
@@ -236,34 +252,40 @@ def check_hexamer(events, fasta, distance_range):
             remove.append(i)
             continue
         
-        if hexamer['strand'] != event['transcript_strand']:
-            remove.append(i)
-            continue
-        
-        chrom = event['variant'].chrom
-        if hexamer['strand'] == '+':
-            hexamer_to_cleavage = int(event['utr_end']) - int(hexamer['hexamer_end'])
-            hexamer_pos = '%s:%d-%d' % (chrom, hexamer['hexamer_end'] - 5, hexamer['hexamer_end'])
-        else:
-            hexamer_to_cleavage = int(hexamer['hexamer_end']) - int(event['utr_start'])
-            hexamer_pos = '%s:%d-%d' % (chrom, hexamer['hexamer_end'], hexamer['hexamer_end'] + 5)
+        annots_kept = []
+        for annot in event['annots']:
+            if hexamer['strand'] != annot['transcript_strand']:
+                continue
+
+            chrom = event['variant'].chrom
+            if hexamer['strand'] == '+':
+                hexamer_to_cleavage = int(annot['utr_end']) - int(hexamer['hexamer_end'])
+                hexamer_pos = '%s:%d-%d' % (chrom, hexamer['hexamer_end'] - 5, hexamer['hexamer_end'])
+            else:
+                hexamer_to_cleavage = int(hexamer['hexamer_end']) - int(annot['utr_start'])
+                hexamer_pos = '%s:%d-%d' % (chrom, hexamer['hexamer_end'], hexamer['hexamer_end'] + 5)
+            if hexamer_to_cleavage < distance_range[0] or hexamer_to_cleavage > distance_range[1]:
+                continue
             
-        if hexamer_to_cleavage < distance_range[0] or hexamer_to_cleavage > distance_range[1]:
+            annot['hexamer_to_cleavage'] = hexamer_to_cleavage
+            annot['hexamer_pos'] = hexamer_pos
+            annot['hexamer_effect'] = hexamer['effect']
+            annot['hexamer_change'] = '%s->%s' % (hexamer['ref'], hexamer['alt'])
+            annot['canonical_hexamer'] = find_canonical_hexamer(chrom,
+                                                                annot['utr_end'] if annot['transcript_strand'] == '+' else annot['utr_start'],
+                                                                hexamer['strand'],
+                                                                distance_range,
+                                                                motifs_plus,
+                                                                motifs_minus,
+                                                                ranks,
+                                                                fasta)
+            annots_kept.append(annot)
+
+        if annots_kept:
+            for key, value in annots_kept[0].iteritems():
+                event[key] = value
+        else:
             remove.append(i)
-            continue
-        
-        event['hexamer_to_cleavage'] = hexamer_to_cleavage
-        event['hexamer_pos'] = hexamer_pos
-        event['hexamer_effect'] = hexamer['effect']
-        event['hexamer_change'] = '%s->%s' % (hexamer['ref'], hexamer['alt'])
-        event['canonical_hexamer'] = find_canonical_hexamer(chrom,
-                                                            event['utr_end'] if event['transcript_strand'] == '+' else  event['utr_start'],
-                                                            hexamer['strand'],
-                                                            distance_range,
-                                                            motifs_plus,
-                                                            motifs_minus,
-                                                            ranks,
-                                                            fasta)
             
     for i in reversed(remove):
         del events[i]
@@ -311,8 +333,7 @@ def find_canonical_hexamer(chrom, utr_end, strand, distance_range, motifs_plus, 
         #return '%s(%s)' % (motifs_sorted[0], ranks[found[motifs_sorted[0]]])
     else:
         return '-'
-    
-    
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Find SNVs from samtools mpileup that potentially affect hexamers(PAS)')
     parser.add_argument("vcf", type=str, help="samtools mpileup vcf")
@@ -320,12 +341,11 @@ def parse_args():
     parser.add_argument("utr3", type=str, help="3utr gff")
     parser.add_argument("outfile", type=str, help="output file")
     parser.add_argument("--min_dp", type=int, default=5, help="min depth Default:5")
-    parser.add_argument("--min_alt_fraction", type=float, help="minimum percentage of alternatvie allele. Default=0.5", default=0.5)
+    parser.add_argument("--min_alt_fraction", type=float, help="minimum percentage of alternatvie allele. Default=0.00001(don't use)", default=0.00001)
     parser.add_argument("--distance", nargs=2, type=int, default=(10,40),\
                         help="distance range between hexamer and cleavage site. Default: 10,40")
     args = parser.parse_args()
     return args
-
 
 def main():
     args = parse_args()
@@ -333,18 +353,11 @@ def main():
     if os.path.getsize(args.vcf) > 0:
         input_vcf = pysam.VariantFile(args.vcf)
 
-        filtered_vcf = '%s/%s_filtered.vcf' % (
-            os.path.dirname(os.path.abspath(args.outfile)),
-            os.path.splitext(os.path.basename(args.vcf))[0])
-
+        filtered_vcf = '%s/%s_filtered.vcf' % (os.path.dirname(os.path.abspath(args.vcf)),
+                                               os.path.splitext(os.path.basename(args.vcf))[0])
         fasta = pysam.FastaFile(args.genome_fasta)
     
-        events = filter_vcf(
-            input_vcf,
-            args.min_dp,
-            args.min_alt_fraction,
-            out_file=filtered_vcf)
-
+        events = filter_vcf(input_vcf, args.min_dp, args.min_alt_fraction, out_file=filtered_vcf)
         print 'filtered:%s' % len(events)
 
         associate_utr(filtered_vcf, args.utr3, events)
@@ -352,6 +365,8 @@ def main():
         
         check_hexamer(events, fasta, args.distance)
         print 'hexamer:%s' % len(events)
+
+        os.remove(filtered_vcf)
         
     report(events, args.outfile)
     

@@ -46,7 +46,8 @@ flags
 
 * `--rm`: remove the container when it exits
 * `-ti`: equivalent to `-t -i`, meaning fetch an interactive TTY
-* `-v`: mount a host volume to the container's filesystem `/bin/bash`: start a bash shell after launching the container. /bin/bash will be the only process in the container, you could	confirm this with `top` inside the container.
+* `-v`: mount a host volume to the container's filesystem
+* `/bin/bash`: start a bash shell after launching the container. `/bin/bash` will be the only process in the container, which you could	confirm with `top` inside the container.
 
 ##### Edit and run
 

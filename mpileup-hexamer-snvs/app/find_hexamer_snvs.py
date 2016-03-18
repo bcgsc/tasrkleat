@@ -23,12 +23,12 @@ def filter_vcf(vcf, min_dp, min_alt_fraction, out_file=None):
     for variant in vcf.fetch():
         if 'INDEL' in variant.info.keys():
             continue
-        
+
         if len(variant.alts) > 1:
             continue
-        
+
         allele_depth = int(variant.info['DP4'][2]) + int(variant.info['DP4'][3])
-        
+
         if int(variant.info['DP']) >= min_dp and float(allele_depth) / float(variant.info['DP']) >= min_alt_fraction:
             allele = variant.alts[0]
             if variant.samples[0]['GT'][0] == variant.samples[0]['GT'][1]:
@@ -42,7 +42,7 @@ def filter_vcf(vcf, min_dp, min_alt_fraction, out_file=None):
                              })
             if bcf_out is not None:
                 bcf_out.write(variant)
-    
+
     return filtered
 
 def report(events, outfile):
@@ -65,31 +65,31 @@ def report(events, outfile):
               'hexamer_to_cleavage',
               'canonical_hexamer'
               )
-    out = open(outfile, 'w')
-    out.write('\t'.join(header) + '\n')
-    for event in events:
-        data = []
-        data.append(event['variant'].chrom)
-        data.append(event['variant'].pos)
-        data.append(event['variant'].ref)
-        data.append(event['allele'])
-        data.append(event['variant'].info['DP'])
-        data.append(event['allele_depth'])
-        data.append(event['allele_depth']*100/event['variant'].info['DP'])
-        data.append(event['zygosity'])
-        data.append(event['gene'])
-        data.append(event['transcript'])
-        data.append(event['transcript_strand'])
-        data.append(event['3UTR'])
-        data.append(event['base_change'])
-        data.append(event['hexamer_pos'])
-        data.append(event['hexamer_effect'])
-        data.append(event['hexamer_change'])
-        data.append(event['hexamer_to_cleavage'])
-        data.append(event['canonical_hexamer'])
-        out.write('\t'.join(map(str, data)) + '\n')
-    out.close()
-    
+    with open(outfile, 'w') as opf:
+        opf.write('\t'.join(header) + '\n')
+        for event in events:
+            data = []
+            data.append(event['variant'].chrom)
+            data.append(event['variant'].pos)
+            data.append(event['variant'].ref)
+            data.append(event['allele'])
+            data.append(event['variant'].info['DP'])
+            data.append(event['allele_depth'])
+            data.append(event['allele_depth']*100/event['variant'].info['DP'])
+            data.append(event['zygosity'])
+            data.append(event['gene'])
+            data.append(event['transcript'])
+            data.append(event['transcript_strand'])
+            data.append(event['3UTR'])
+            data.append(event['base_change'])
+            data.append(event['hexamer_pos'])
+            data.append(event['hexamer_effect'])
+            data.append(event['hexamer_change'])
+            data.append(event['hexamer_to_cleavage'])
+            data.append(event['canonical_hexamer'])
+            opf.write('\t'.join(map(str, data)) + '\n')
+
+
 def associate_utr(filtered_vcf, utr_gff, events):
     """associate filtered SNVs to UTR"""
     def in_opposing_transcripts(olaps):
@@ -101,17 +101,17 @@ def associate_utr(filtered_vcf, utr_gff, events):
 
     filtered_bed = BedTool(filtered_vcf)
     utr_bed = BedTool(utr_gff)
-    
+
     utr_olapped = collections.defaultdict(list)
     for olap in filtered_bed.intersect(utr_bed, wb=True):
         utr_start = int(olap[13])
         utr_end = int(olap[14])
         transcript_strand = olap[16]
         transcript, gene = olap[18].split('::')
-        
+
         pos = '%s:%s' % (olap[0], olap[1])
         utr_olapped[pos].append([gene, transcript, transcript_strand, utr_start, utr_end])
-        
+
     remove = []
     for i in range(len(events)):
         pos = '%s:%s' % (events[i]['variant'].chrom, events[i]['variant'].pos)
@@ -137,17 +137,17 @@ def associate_utr(filtered_vcf, utr_gff, events):
                                })
 
             events[i]['annots'] = annots
-            
+
     for i in reversed(remove):
         del events[i]
-        
+
 def scan_for_hexamer(fasta, chrom, pos, ref, alt, motifs_plus, motifs_minus, ranks):
     """Look for possible hexamers at given chromosome position"""
     motifs = motifs_plus + motifs_minus
     hexamer_start = None
     effect = None
     hexamer_change = None
-    
+
     result = None
     #chrom_ucsc = 'chr' + chrom
     for base in range(pos - 5, pos + 1):
@@ -158,9 +158,9 @@ def scan_for_hexamer(fasta, chrom, pos, ref, alt, motifs_plus, motifs_minus, ran
             continue
         hexamer_alt_list[hexamer_idx] = alt
         hexamer_alt = ''.join(hexamer_alt_list)
-        
+
         hexamer_change = (hexamer_ref, hexamer_alt)
-        
+
         if (hexamer_ref.upper() in motifs_plus and\
             hexamer_alt.upper() not in motifs_plus) or\
            (hexamer_ref.upper() in motifs_minus and\
@@ -171,7 +171,7 @@ def scan_for_hexamer(fasta, chrom, pos, ref, alt, motifs_plus, motifs_minus, ran
             else:
                 strand = '-'
                 hexamer_end = base
-            
+
             result = {'chrom': chrom,
                       'start': pos,
                       'ref': '%s(%s)' % (hexamer_ref.upper(), ranks[hexamer_ref.upper()]),
@@ -210,12 +210,12 @@ def scan_for_hexamer(fasta, chrom, pos, ref, alt, motifs_plus, motifs_minus, ran
             else:
                 strand = '-'
                 hexamer_end = base
-            
+
             if ranks[hexamer_ref.upper()] < ranks[hexamer_alt.upper()]:
                 effect = 'shift-'
             else:
                 effect = 'shift+'
-            
+
             result = {'chrom': chrom,
                       'start': pos,
                       'ref': '%s(%s)' % (hexamer_ref.upper(), ranks[hexamer_ref.upper()]),
@@ -225,7 +225,7 @@ def scan_for_hexamer(fasta, chrom, pos, ref, alt, motifs_plus, motifs_minus, ran
                       'hexamer_end': hexamer_end
                       }
             break
-        
+
     return result
 
 def check_hexamer(events, fasta, distance_range):
@@ -251,7 +251,7 @@ def check_hexamer(events, fasta, distance_range):
         if hexamer is None:
             remove.append(i)
             continue
-        
+
         annots_kept = []
         for annot in event['annots']:
             if hexamer['strand'] != annot['transcript_strand']:
@@ -266,7 +266,7 @@ def check_hexamer(events, fasta, distance_range):
                 hexamer_pos = '%s:%d-%d' % (chrom, hexamer['hexamer_end'], hexamer['hexamer_end'] + 5)
             if hexamer_to_cleavage < distance_range[0] or hexamer_to_cleavage > distance_range[1]:
                 continue
-            
+
             annot['hexamer_to_cleavage'] = hexamer_to_cleavage
             annot['hexamer_pos'] = hexamer_pos
             annot['hexamer_effect'] = hexamer['effect']
@@ -286,10 +286,10 @@ def check_hexamer(events, fasta, distance_range):
                 event[key] = value
         else:
             remove.append(i)
-            
+
     for i in reversed(remove):
         del events[i]
-        
+
 def get_motifs():
     """put hexamer motifs and their ranks into data structure"""
     motifs_plus = ['AATAAA', 'ATTAAA', 'AGTAAA', 'TATAAA', 'CATAAA', 'GATAAA',
@@ -307,7 +307,7 @@ def get_motifs():
         rank += 1
 
     return motifs_plus, motifs_minus, ranks
-        
+
 def find_canonical_hexamer(chrom, utr_end, strand, distance_range, motifs_plus, motifs_minus, ranks, fasta):
     def search(window, motifs, found):
         for pos in range(window[0] - 5, window[1] + 5 + 1):
@@ -356,18 +356,18 @@ def main():
         filtered_vcf = '%s/%s_filtered.vcf' % (os.path.dirname(os.path.abspath(args.vcf)),
                                                os.path.splitext(os.path.basename(args.vcf))[0])
         fasta = pysam.FastaFile(args.genome_fasta)
-    
+
         events = filter_vcf(input_vcf, args.min_dp, args.min_alt_fraction, out_file=filtered_vcf)
         print 'filtered:%s' % len(events)
 
         associate_utr(filtered_vcf, args.utr3, events)
         print 'utr:%s' % len(events)
-        
+
         check_hexamer(events, fasta, args.distance)
         print 'hexamer:%s' % len(events)
 
         os.remove(filtered_vcf)
-        
+
     report(events, args.outfile)
-    
+
 main()

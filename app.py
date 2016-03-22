@@ -200,9 +200,13 @@ def upload(inputs, outputs):
     sample_name = os.path.basename(input_dir)
     bucket_dir = os.path.join(cfg['output_gs_bucket'], sample_name)
 
-    re_files_to_exclude = '|'.join(['.*\.fq$', '.*\.bam$'])
-    cmd = ("{auth_gsutil} -m rsync -x '{re_files_to_exclude}' -r -d "
+    # re_files_to_exclude = '|'.join(['.*\.fq$', '.*\.bam$'])
+    # cmd = ("{auth_gsutil} -m rsync -x '{re_files_to_exclude}' -r -d "
+    #        "{input_dir} {bucket_dir}").format(**locals())
+
+    cmd = ("{auth_gsutil} -m rsync -r -d "
            "{input_dir} {bucket_dir}").format(**locals())
+
     U.execute(cmd, flag)
 
 

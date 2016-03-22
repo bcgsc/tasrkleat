@@ -1,6 +1,5 @@
 import os
 import re
-import multiprocessing
 
 from argsparser import parse_args
 
@@ -10,34 +9,12 @@ def gen_config():
     args = parse_args()
 
     config = {
-        'input_gs_bam': args.input_gs_bam,
-        # authorized gsutil
-        'auth_gsutil': 'gsutil -o Credentials:gs_oauth2_refresh_token=$(cat {0})'.format(args.refresh_token),
-
-        'steps': {
-            'upload': {
-                'output_gs_bucket': args.upload_gs_bucket,
-            },
-        },
-
+        'input_bam': args.input_bam,
+        'num_cpus': args.num_threads
     }
 
-    if args.num_threads:
-        config['num_cpus'] = args.num_threads
-    else:
-        config['num_cpus'] = multiprocessing.cpu_count()
-
-    if 'prefix' not in config or not config['prefix']:
-        # trying to mimic the directory hierarchy as the input by remove gs://
-        # at the beginning and .bam at the end of the url
-        config['prefix'] = re.sub('^gs\:\/\/', '', config['input_gs_bam'])
-        config['prefix'] = re.sub('\.bam$', '', config['prefix'])
-
-    if 'output_dir' not in config or not config['output_dir']:
-        config['output_dir'] = os.path.join(
-            # use - instead of _ to avoid confusion because when downloading
-            # the zip from GCS, / will replaced with _
-            os.getcwd(), config['prefix'], '{0}-results'.format(project_id))
+    config['output_dir'] = os.path.join(
+        os.path.dirname(config['input_bam']), '{0}-results'.format(project_id))
 
     output_log_file = args.output_log
     if not output_log_file:
@@ -51,6 +28,7 @@ def gen_config():
 
     config['logging'] = configure_logging_dict(output_log_file)
     return config
+
 
 def configure_logging_dict(output_log_file):
     return {

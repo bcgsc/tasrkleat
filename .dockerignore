@@ -3,3 +3,5 @@ launch
 experiment
 results
 *.pyc
+_cmd.sh
+refresh-token/

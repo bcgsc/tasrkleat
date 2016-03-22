@@ -1,4 +1,5 @@
 venv
 launch
 experiment
+results
 *.pyc

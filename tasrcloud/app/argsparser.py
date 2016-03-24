@@ -7,12 +7,12 @@ def parse_args():
         usage='require python-2.7.x')
 
     parser.add_argument(
-        '-i', '--input-gs-bam', required=True,
+        '-i', '--input-bam', required=True,
         help=("input bam file from Google Cloud Storage (GCS), "
               "e.g. gs://<bucket-name>/<some.bam>"))
     
     parser.add_argument(
-        '-f', '--input-gs-bf', required=True,
+        '-f', '--input-bf', required=True,
         help=("input bloomfilter from GCS, the bloomfilter (.bf) and its "
               "corresponding txt file (.txt) should be tar and gziped into "
               "a single .tar.gz file, e.g. gs://<bucket-name>/<some-name.tar.gz>, "
@@ -28,10 +28,6 @@ def parse_args():
         help=('the kmer size for running abyss, typically go for roughly '
               '~half the read length as a first trial. '
               'e.g. for 76bp, k=36 could be adequate'))
-
-    parser.add_argument(
-        '-o', '--upload-gs-bucket', required=True,
-        help=("the GCS bucket to write back results"))
 
     parser.add_argument(
         '-r', '--refresh-token', required=True,

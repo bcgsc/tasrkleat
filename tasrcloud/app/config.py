@@ -6,18 +6,19 @@ from argsparser import parse_args
 
 
 def gen_config():
+    project_id = os.environ['PROJECT_ID']
     args = parse_args()
 
     config = {
-        'input_gs_bam': args.input_gs_bam,
-        'input_gs_bf': args.input_gs_bf,
+        'input_bam': args.input_bam,
         'num_cpus': multiprocessing.cpu_count(),
         # authorized gsutil
         'auth_gsutil': 'gsutil -o Credentials:gs_oauth2_refresh_token=$(cat {0})'.format(args.refresh_token),
 
         'steps': {
             'biobloomcategorizer': {
-                'bf_name': re.sub('\.tar\.gz$', '', os.path.basename(args.input_gs_bf))
+                'input_bf': args.input_bf,
+                'bf_name': re.sub('\.bf$', '', os.path.basename(args.input_bf))
             },
 
             'abyss': {
@@ -26,71 +27,77 @@ def gen_config():
             },
 
             'upload': {
-                'output_gs_bucket': args.upload_gs_bucket,
+                'output_bucket': args.upload_bucket,
             },
         },
 
     }
 
+    config['output_dir'] = os.path.join(
+        os.path.dirname(config['input_bam']), '{0}-results'.format(project_id))
 
-    if 'prefix' not in config or not config['prefix']:
-        config['prefix'] = re.sub('\.bam$', '', os.path.basename(config['input_gs_bam']))
-
-    if 'output_dir' not in config or not config['output_dir']:
-        config['output_dir'] = os.path.join(os.getcwd(), 'tasrcloud_results', config['prefix'])
+    output_log_file = args.output_log
+    if not output_log_file:
+        output_log_file = os.path.join(
+            config['output_dir'], '{0}.log'.format(project_id))
 
     try:
         os.makedirs(config['output_dir'])
     except OSError:
         pass
 
-    config['logging'] = {
+    config['logging'] = configure_logging_dict(output_log_file)
+    return config
+
+
+
+def configure_logging_dict(output_log_file):
+    return {
         'version': 1,
         'disable_existing_loggers': True,
 
-         'loggers': {
-             '__main__': {
-                 'handlers': ['screen', 'file'],
-                 'level': 'DEBUG',
-                 'propagate': True,
-             },
-             'utils': {
-                 'handlers': ['screen', 'file'],
-                 'level': 'DEBUG',
-                 'propagate': True,
-             },
-         },
+        'loggers': {
+            '__main__': {
+                'handlers': ['screen', 'file'],
+                'level': 'DEBUG',
+                'propagate': True,
+                },
+            'utils': {
+                'handlers': ['screen', 'file'],
+                'level': 'DEBUG',
+                'propagate': True,
+                },
+            },
 
-         'formatters': {
-             'verbose': {
-                 'format': '%(levelname)s|%(asctime)s|%(name)s|%(module)s|%(process)d|%(processName)s|%(relativeCreated)d|%(thread)d|%(threadName)s|%(msecs)d ms|%(pathname)s+%(lineno)d|%(funcName)s:%(message)s'
-             },
-             'standard': {
-                 'format': '%(levelname)s|%(asctime)s|%(name)s:%(message)s'
-             },
-             'colorful': {
-                 # https://github.com/borntyping/python-colorlog#with-dictconfig
-                 '()': 'colorlog.ColoredFormatter',
-                 'format': '%(log_color)s%(levelname)s%(reset)s|%(log_color)s[%(asctime)s]%(reset)s|%(log_color)s%(name)s%(reset)s:%(message)s'
-             }
-         },
+        'formatters': {
+            'verbose': {
+                'format': '%(levelname)s|%(asctime)s|%(name)s|%(module)s|%(process)d|%(processName)s|%(relativeCreated)d|%(thread)d|%(threadName)s|%(msecs)d ms|%(pathname)s+%(lineno)d|%(funcName)s:%(message)s'
+                },
+            'standard': {
+                'format': '%(levelname)s|%(asctime)s|%(name)s:%(message)s'
+                },
+            'colorful': {
+                # https://github.com/borntyping/python-colorlog#with-dictconfig
+                '()': 'colorlog.ColoredFormatter',
+                'format': '%(log_color)s%(levelname)s%(reset)s|%(log_color)s[%(asctime)s]%(reset)s|%(log_color)s%(name)s%(reset)s:%(message)s'
+                }
+            },
 
-         'handlers': {
-             'screen':{
-                 'level': 'DEBUG',
-                 'class': 'logging.StreamHandler',
-                 'formatter': 'colorful'
-             },
-             'file': {
-                 'level': 'DEBUG',
-                 'class': 'logging.FileHandler',
-                 'filename': os.path.join(config['output_dir'], 'tasrcloud.log'),
-                 'formatter': 'standard'
-             },
+        'handlers': {
+            'screen':{
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'colorful'
+                },
+            'file': {
+                'level': 'DEBUG',
+                'class': 'logging.FileHandler',
+                'filename': output_log_file,
+                'formatter': 'standard'
+                },
+            },
+        }
 
-         },
 
-     }
-    return config
 
 CONFIG = gen_config()

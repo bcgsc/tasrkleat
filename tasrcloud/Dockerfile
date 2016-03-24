@@ -3,6 +3,13 @@ MAINTAINER Zhuyi Xue <zxue.bcgsc@gmail.com>
 
 RUN apt-get update
 
+RUN apt-get update && apt-get -y install \
+    gcc \
+    python-dev \
+    python-setuptools \
+    && easy_install -U pip \
+    && pip install -U crcmod colorlog ruffus
+
 # mpirun needs ssh to run successfully
 # bc is from bsdmainutils, which is needed to run abyss
 # check wheter crcmod is installed with "gsutil version -l"
@@ -24,9 +31,7 @@ RUN apt-get -yf install \
     samtools \
     ssh \
     unzip \
-    zlib1g-dev \
-    && easy_install -U pip \
-    && pip install -U crcmod colorlog ruffus
+    zlib1g-dev
 
 # RUN curl -OL "http://www.bcgsc.ca/platform/bioinfo/software/biobloomtools/releases/2.0.12/biobloomtools-2.0.12.tar.gz" \
 #     && tar zxf biobloomtools-2.0.12.tar.gz \
@@ -53,18 +58,18 @@ RUN curl -OL "https://github.com/bcgsc/abyss/releases/download/1.9.0/abyss-1.9.0
     && make install \
     && cd .. && rm -rfv abyss-1.9.0*
 
-ENV PATH=/tasrcloud:${PATH}
 
-RUN mkdir /tasrcloud
-ADD *.py /tasrcloud/
+ENV PROJECT_ID=tasrcloud
+ENV PATH=/${PROJECT_ID}:${PATH}
+RUN mkdir /${PROJECT_ID}
+ADD app/*.py /${PROJECT_ID}/
 
-# CMD value should be json, must use double quotes
-CMD ["app.py", \
-     "--input-gs-bam", "gs://tasrcloud-test-data/test.bam", \
-     "--input-gs-bf", "gs://tasrcloud-bfs/targetUTRcell2009.tar.gz", \
-     "--abyss-kmer-size", "15", \
-     "--upload-gs-bucket", "gs://tasrcloud-test-results", \
-     "--refresh-token", "/refresh-token/refresh-token" \
-    ]
 
-# # && pip install --upgrade google-api-python-client \
+# CMD ["app.py", \
+#      "--input-bam", "gs://tasrcloud-test-data/test.bam", \
+#      "--input-bf", "gs://tasrcloud-bfs/targetUTRcell2009.tar.gz", \
+#      "--abyss-kmer-size", "15", \
+#      "--upload-gs-bucket", "gs://tasrcloud-test-results", \
+#      "--refresh-token", "/refresh-token/refresh-token" \
+#     ]
+

@@ -1,11 +1,10 @@
 import os
-import re
 
 from argsparser import parse_args
 
 
 def gen_config():
-    project_id = 'bamqc'
+    project_id = os.path.environ['PROJECT_ID']
     args = parse_args()
 
     config = {

@@ -10,12 +10,15 @@ def gen_config():
     args = parse_args()
 
     config = {
-        'input_bam': args.input_bam,
+        # 'input_bam': args.input_bam,
+        'input_fq': args.input_fq,
+        'input_fq2': args.input_fq2,
         'num_cpus': multiprocessing.cpu_count(),
 
         'steps': {
             'biobloomcategorizer': {
                 'input_bf': args.input_bf,
+                'bf_name': re.sub('\.bf$', '', os.path.basename(args.input_bf)),
             },
 
             'abyss': {
@@ -27,7 +30,7 @@ def gen_config():
     }
 
     config['output_dir'] = os.path.join(
-        os.path.dirname(config['input_bam']), '{0}-results'.format(project_id))
+        os.path.dirname(config['input_fq']), '{0}-results'.format(project_id))
 
     output_log_file = args.output_log
     if not output_log_file:

@@ -16,24 +16,25 @@ import pprint
 logger.info('\n{0}'.format(pprint.pformat(CONFIG)))
 
 
-
-@R.mkdir(CONFIG['input_bam'], R.formatter(),
+@R.mkdir(CONFIG['input_fq'], R.formatter(),
          os.path.join(CONFIG['output_dir'], 'biobloomcategorizer'))
-@R.transform(CONFIG['input_bam'], R.formatter(), [
-    # because of .format(), {{}} means it's literal
-    os.path.join(
-        CONFIG['output_dir'], 'biobloomcategorizer',
-        'cba_{0}_1.fq'.format(
-            re.sub('\.bf$', '',
-                   os.path.basename(CONFIG['steps']['biobloomcategorizer']['input_bf'])))),
-    os.path.join(
-        CONFIG['output_dir'], 'biobloomcategorizer',
-        'cba_{0}_2.fq'.format(
-            re.sub('\.bf$', '',
-                   os.path.basename(CONFIG['steps']['biobloomcategorizer']['input_bf']))))
-])
+@R.collate(
+    [CONFIG['input_fq'], CONFIG['input_fq2']],
+    R.formatter(),
+    [
+        os.path.join(CONFIG['output_dir'], 'biobloomcategorizer',
+                     'cba_{0}_1.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name'])),
+        os.path.join(CONFIG['output_dir'], 'biobloomcategorizer',
+                     'cba_{0}_2.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']))
+    ]
+)
 @U.timeit
-def biobloomcategorizer(input_bam, outputs):
+def biobloomcategorizer(inputs, outputs):
+    # input_fq1, input_fq2 = inputs
+    # instead of the above line, assign input_fq1 & input_fq2, respectively
+    input_fq1 = CONFIG['input_fq']
+    input_fq2 = CONFIG['input_fq2']
+
     output_fq1, output_fq2 = outputs
     output_dir = os.path.dirname(output_fq1)
     output_prefix = os.path.join(output_dir, 'cba')
@@ -49,15 +50,9 @@ def biobloomcategorizer(input_bam, outputs):
            "-i "
            "-f '{input_bf}' "
            "-t {num_cpus} "
-           "--fq {input_bam}".format(**cfg))
+           "--fq {input_fq1} {input_fq2}".format(**cfg))
     U.execute(cmd)
-    # don't delete since filesystem in the container is ephemeral anyway, code
-    # left for ref
-    # for f in os.listdir(output_dir):
-    #     path_f = os.path.join(output_dir, f)
-    #     if path_f not in outputs:
-    #         logger.debug('removing {0}'.format(path_f))
-    #         os.remove(path_f)
+
 
 @R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/abyss')
 @R.transform(biobloomcategorizer, R.formatter(), [
@@ -71,7 +66,7 @@ def biobloomcategorizer(input_bam, outputs):
     # '{subpath[0][1]}/abyss/cba-2.path',
     # '{subpath[0][1]}/abyss/cba-3.dist',
     # '{subpath[0][1]}/abyss/cba-3.dot',
-    # '{subpath[0][1]}/abyss/cba-3.fa',
+    '{subpath[0][1]}/abyss/cba-3.fa',
     # '{subpath[0][1]}/abyss/cba-3.fa.fai',
     # '{subpath[0][1]}/abyss/cba-3.hist',
     # '{subpath[0][1]}/abyss/cba-4.dot',
@@ -85,7 +80,7 @@ def biobloomcategorizer(input_bam, outputs):
     # '{subpath[0][1]}/abyss/cba-5.path',
     # '{subpath[0][1]}/abyss/cba-6.dist.dot',
     # '{subpath[0][1]}/abyss/cba-6.dot',
-    # '{subpath[0][1]}/abyss/cba-6.fa',
+    '{subpath[0][1]}/abyss/cba-6.fa',
     # '{subpath[0][1]}/abyss/cba-6.hist',
     # '{subpath[0][1]}/abyss/cba-6.path',
     # '{subpath[0][1]}/abyss/cba-6.path.dot',
@@ -93,7 +88,7 @@ def biobloomcategorizer(input_bam, outputs):
     # '{subpath[0][1]}/abyss/cba-7.fa',
     # '{subpath[0][1]}/abyss/cba-7.path',
     # '{subpath[0][1]}/abyss/cba-8.dot',
-    # '{subpath[0][1]}/abyss/cba-8.fa',
+    '{subpath[0][1]}/abyss/cba-8.fa',
     # '{subpath[0][1]}/abyss/cba-bubbles.fa',
     # # this is symlinked to cba-6.dot
     # '{subpath[0][1]}/abyss/cba-contigs.dot',
@@ -113,15 +108,14 @@ def biobloomcategorizer(input_bam, outputs):
     # '{subpath[0][1]}/abyss/cba-stats.tab',
     # # this is symlinked to cba-3.fa
     # '{subpath[0][1]}/abyss/cba-unitigs.fa',
-    '{subpath[0][1]}/abyss/abyss.log',
-    '{subpath[0][1]}/abyss/abyss.COMPLETE'
 ])
 @U.timeit
 def abyss(inputs, outputs):
-    input_fq1, input_fq2, _, _ = inputs
-    log, flag = outputs
+    input_fq1, input_fq2 = inputs
+    unitigs_fa, contigs_fa, scafflods_fa = outputs
     cfg = CONFIG['steps']['abyss']
     too_small, read_count = U.fastq_too_small(input_fq1)
+
     if too_small:
         cfg.update(locals())
         msg = ('Only {read_count} (expect > {num_reads_cutoff}) reads are found '
@@ -133,14 +127,18 @@ def abyss(inputs, outputs):
         U.touch(flag)
         return
 
-    outdir = os.path.dirname(log)
+    outdir = os.path.dirname(unitigs_fa)
     num_cpus = CONFIG['num_cpus']
-    # as a note: name=a won't work for abyss-pe because of the particular way
+
+    # Note: name=a won't work for abyss-pe because of the particular way
     # how abyss reads command line parameters
-    cmd = ("abyss-pe name=cba k={kmer_size} in='{input_fq1} {input_fq2}' "
-           "np={num_cpus} 2>&1 -C {outdir} 2>&1 | tee {log}").format(
-               kmer_size=cfg['kmer_size'], **locals())
-    U.execute(cmd, flag)
+    cmd = ("abyss-pe "
+           "name=cba "
+           "k={kmer_size} "
+           "in='{input_fq1} {input_fq2}' "
+           "np={num_cpus} "
+           "-C {outdir}").format(kmer_size=cfg['kmer_size'], **locals())
+    U.execute(cmd)
 
 
 if __name__ == "__main__":

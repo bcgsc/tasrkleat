@@ -111,7 +111,9 @@ def biobloomcategorizer(inputs, outputs):
 ])
 @U.timeit
 def abyss(inputs, outputs):
-    input_fq1, input_fq2 = inputs
+    # better use absolute path because of -C option in abyss, which changes the
+    # relative path.
+    input_fq1, input_fq2 = [os.path.abspath(_) for _ in inputs]
     unitigs_fa, contigs_fa, scafflods_fa = outputs
     cfg = CONFIG['steps']['abyss']
     too_small, read_count = U.fastq_too_small(input_fq1)

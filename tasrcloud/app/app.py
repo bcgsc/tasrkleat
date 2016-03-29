@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import re
 
 import ruffus as R
 
@@ -17,27 +18,39 @@ logger.info('\n{0}'.format(pprint.pformat(CONFIG)))
 
 
 @R.mkdir(CONFIG['input_bam'], R.formatter(),
-         os.path.join(CONFIG['output_dir'], 'download_bam'))
+         os.path.join(CONFIG['output_dir'], 'biobloomcategorizer'))
 @R.transform(CONFIG['input_bam'], R.formatter(), [
     # because of .format(), {{}} means it's literal
-    '{{path[0]}}/biobloomcategorizer/cba_{0}_1.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
-    '{{path[0]}}/biobloomcategorizer/cba_{0}_2.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']),
-    '{path[0]}/biobloomcategorizer/biobloomcategorizer.log',
-    '{path[0]}/biobloomcategorizer/biobloomcategorizer.COMPLETE'
+    os.path.join(
+        CONFIG['output_dir'], 'biobloomcategorizer',
+        'cba_{0}_1.fq'.format(
+            re.sub('\.bf$', '',
+                   os.path.basename(CONFIG['steps']['biobloomcategorizer']['input_bf'])))),
+    os.path.join(
+        CONFIG['output_dir'], 'biobloomcategorizer',
+        'cba_{0}_2.fq'.format(
+            re.sub('\.bf$', '',
+                   os.path.basename(CONFIG['steps']['biobloomcategorizer']['input_bf']))))
 ])
 @U.timeit
 def biobloomcategorizer(input_bam, outputs):
-    output_fq1, output_fq2, log, flag = outputs
+    output_fq1, output_fq2 = outputs
     output_dir = os.path.dirname(output_fq1)
     output_prefix = os.path.join(output_dir, 'cba')
-    bf = CONFIG['biobloomcategorizer']['input_bf']
     num_cpus = CONFIG['num_cpus']
+    cfg = CONFIG['steps']['biobloomcategorizer']
+    cfg.update(locals())
     # considered using -d, but then the paired-end reads get interlaced into a
     # single file, which would become problematic when the paired-end read
     # names aren't distinguishable
-    cmd = ("biobloomcategorizer -p {output_prefix} -e -i -f '{bf}' -t {num_cpus} "
-           "--fq {input_bam}".format(**locals()))
-    U.execute(cmd, flag)
+    cmd = ("biobloomcategorizer "
+           "-p {output_prefix} "
+           "-e "
+           "-i "
+           "-f '{input_bf}' "
+           "-t {num_cpus} "
+           "--fq {input_bam}".format(**cfg))
+    U.execute(cmd)
     # don't delete since filesystem in the container is ephemeral anyway, code
     # left for ref
     # for f in os.listdir(output_dir):

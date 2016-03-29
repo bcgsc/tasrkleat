@@ -1,4 +1,5 @@
 import ruffus as R
+import multiprocessing
 
 
 def parse_args():
@@ -30,11 +31,13 @@ def parse_args():
               'e.g. for 76bp, k=36 could be adequate'))
 
     parser.add_argument(
-        '-r', '--refresh-token', required=True,
-        help=("the path to a file containing the refresh token, which authorizes "
-              "the code to read and write to relevant GCS bucket typically "
-              "you're supposed to mount it somewhere in the file system when "
-              "launch a job/jobs with Kubernetes"))
-    
+        '-t', '--num-threads', default=multiprocessing.cpu_count(),
+        help=('if not specified, will use the number of available cpus on '
+              'the machine'))
+
+    parser.add_argument(
+        '--output-log',
+        help='output log file, default to <current_dir>/bamqc.log')
+
     args = parser.parse_args()
     return args

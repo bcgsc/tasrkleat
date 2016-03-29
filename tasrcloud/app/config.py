@@ -12,22 +12,15 @@ def gen_config():
     config = {
         'input_bam': args.input_bam,
         'num_cpus': multiprocessing.cpu_count(),
-        # authorized gsutil
-        'auth_gsutil': 'gsutil -o Credentials:gs_oauth2_refresh_token=$(cat {0})'.format(args.refresh_token),
 
         'steps': {
             'biobloomcategorizer': {
                 'input_bf': args.input_bf,
-                'bf_name': re.sub('\.bf$', '', os.path.basename(args.input_bf))
             },
 
             'abyss': {
                 'num_reads_cutoff': args.abyss_num_reads_cutoff,
                 'kmer_size': args.abyss_kmer_size,
-            },
-
-            'upload': {
-                'output_bucket': args.upload_bucket,
             },
         },
 

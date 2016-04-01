@@ -124,9 +124,6 @@ def abyss(inputs, outputs):
                'in\n\t{input_fq1}\n\t{input_fq2}\n'
                'too small for assembly').format(**cfg)
         logging.info(msg)
-        with open(log, 'wt') as opf:
-            opf.write('{0}\n'.format(msg))
-        U.touch(flag)
         return
 
     outdir = os.path.dirname(unitigs_fa)

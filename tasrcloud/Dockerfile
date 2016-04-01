@@ -1,6 +1,8 @@
 FROM google/cloud-sdk
 MAINTAINER Zhuyi Xue <zxue.bcgsc@gmail.com>
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update
 
 RUN apt-get update && apt-get -y install \
@@ -65,11 +67,5 @@ RUN mkdir /${PROJECT_ID}
 ADD app/*.py /${PROJECT_ID}/
 
 
-# CMD ["app.py", \
-#      "--input-bam", "gs://tasrcloud-test-data/test.bam", \
-#      "--input-bf", "gs://tasrcloud-bfs/targetUTRcell2009.tar.gz", \
-#      "--abyss-kmer-size", "15", \
-#      "--upload-gs-bucket", "gs://tasrcloud-test-results", \
-#      "--refresh-token", "/refresh-token/refresh-token" \
-#     ]
+CMD ["app.py", "--help"]
 

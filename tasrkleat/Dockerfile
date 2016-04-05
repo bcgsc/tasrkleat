@@ -1,14 +1,11 @@
-FROM google/cloud-sdk
-MAINTAINER Zhuyi Xue <zxue.bcgsc@gmail.com>
+# https://raw.githubusercontent.com/sjackman/docker-linuxbrew/master/linuxbrew-core/Dockerfile
 
-# linuxbrew setup part is adopted from
-# https://raw.githubusercontent.com/sjackman/docker-linuxbrew/master/linuxbrew-core/Dockerfile,
-# which was originally written for ubuntu, but google/cloud-sdk is debian (jessie).
-
-RUN apt-get update && apt-get install locales sudo
+FROM ubuntu
+MAINTAINER Shaun Jackman <sjackman@gmail.com>
 
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
 
+RUN apt-get update
 RUN apt-get install -y curl g++ gawk m4 make patch ruby tcl
 
 RUN useradd -m -s /bin/bash linuxbrew
@@ -16,10 +13,47 @@ RUN echo 'linuxbrew ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers
 
 USER linuxbrew
 WORKDIR /home/linuxbrew
-ENV HOME /home/linuxbrew
 ENV PATH /home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH
 ENV SHELL /bin/bash
 RUN yes |ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/linuxbrew/go/install)"
 RUN brew doctor || true
 
-RUN sudo apt-get install build-essential
+#####################above are about setting up linuxbrew######################
+
+# install transabyss requirements
+RUN sudo apt-get install -y python-pip python-dev zlib1g-dev libxml2-dev
+
+RUN sudo pip install pysam
+RUN sudo pip install biopython
+RUN sudo pip install python-igraph
+
+RUN sudo apt-get install -y git
+RUN sudo apt-get install -y default-jre
+RUN sudo apt-get install -y libncurses5 libncurses5-dev
+
+RUN sudo apt-get -yf install \
+automake \
+bsdmainutils \
+build-essential \
+curl \
+gcc \
+libboost-all-dev \
+libopenmpi-dev \
+libpython-dev \
+libsparsehash-dev \
+libsqlite3-dev \
+openmpi-bin \
+python-dev \
+python-setuptools \
+ssh \
+unzip \
+zlib1g-dev
+
+RUN sudo apt-get install -y libopenblas-dev libopenblas-base liblapack3 liblapack-dev liblapacke liblapacke-dev
+
+# by default installing bowtie2 fails without --without-tbb
+RUN brew install -dv homebrew/science/bowtie2 --without-tbb
+
+RUN brew install -dv homebrew/science/trans-abyss
+
+RUN brew install -dv homebrew/science/biobloomtools

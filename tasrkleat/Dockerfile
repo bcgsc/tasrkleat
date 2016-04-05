@@ -57,3 +57,15 @@ RUN brew install -dv homebrew/science/bowtie2 --without-tbb
 RUN brew install -dv homebrew/science/trans-abyss
 
 RUN brew install -dv homebrew/science/biobloomtools
+
+RUN sudo apt-get install -y python-pip \
+    && sudo pip install -U colorlog ruffus
+
+ENV HOME /home/linuxbrew
+
+
+ENV PROJECT_ID=tasrcloud
+ENV _PROJECT_DIR ${HOME}/local/${PROJECT_ID}
+ENV PATH=${_PROJECT_DIR}:${PATH}
+RUN mkdir -p ${_PROJECT_DIR}
+ADD app/*.py ${_PROJECT_DIR}/

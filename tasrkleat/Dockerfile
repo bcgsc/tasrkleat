@@ -56,7 +56,21 @@ RUN brew install -dv homebrew/science/bowtie2 --without-tbb
 
 RUN brew install -dv homebrew/science/trans-abyss
 
+# trans-abyss doesn't work with abyss-1.9.0 selected by linuxbrew, so install
+# an old version instead
+RUN brew uninstall abyss
+
+RUN curl -OL "https://github.com/bcgsc/abyss/releases/download/1.5.2/abyss-1.5.2.tar.gz" \
+    && tar zxf abyss-1.5.2.tar.gz \
+    && cd abyss-1.5.2 \
+    && ./configure --with-mpi=/usr/lib/openmpi \
+    && make -j 8 \
+    && sudo make install \
+    && cd .. && rm -rfv abyss-1.5.2*
+
 RUN brew install -dv homebrew/science/biobloomtools
+
+RUN brew install -dv homebrew/science/bwa
 
 RUN sudo apt-get install -y python-pip \
     && sudo pip install -U colorlog ruffus
@@ -64,7 +78,7 @@ RUN sudo apt-get install -y python-pip \
 ENV HOME /home/linuxbrew
 
 
-ENV PROJECT_ID=tasrcloud
+ENV PROJECT_ID=tasrkleat
 ENV _PROJECT_DIR ${HOME}/local/${PROJECT_ID}
 ENV PATH=${_PROJECT_DIR}:${PATH}
 RUN mkdir -p ${_PROJECT_DIR}

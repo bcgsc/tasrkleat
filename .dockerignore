@@ -5,3 +5,5 @@ results
 *.pyc
 _cmd.sh
 refresh-token/
+
+build.log

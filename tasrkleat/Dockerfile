@@ -77,6 +77,15 @@ RUN sudo apt-get install -y python-pip \
 
 ENV HOME /home/linuxbrew
 
+# use an older version of gmap-gsnap
+ENV PATH=${HOME}/local/gmap/bin:${PATH}
+RUN wget http://research-pub.gene.com/gmap/src/gmap-gsnap-2014-03-28.v2.tar.gz  \
+    && tar zxf gmap-gsnap-2014-03-28.v2.tar.gz \
+    && cd gmap-2014-03-28 \
+    && ./configure --prefix=${HOME}/local/gmap \
+    && make \
+    && make install \
+    && cd .. && rm -rf gmap-gsnap-2014-03-28.v2.tar.gz gmap-2014-03-28
 
 ENV PROJECT_ID=tasrkleat
 ENV _PROJECT_DIR ${HOME}/local/${PROJECT_ID}

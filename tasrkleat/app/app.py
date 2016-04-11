@@ -111,8 +111,9 @@ def transabyss(inputs, outputs):
 @R.mkdir(transabyss, R.formatter(), '{subpath[0][1]}/align_contigs_to_genome')
 @R.transform(transabyss, R.formatter(), [
     '{subpath[0][1]}/align_contigs_to_genome/cba.sort.bam',
+    '{subpath[0][1]}/align_contigs_to_genome/cba.sort.bam.bai',
 ])
-def align_contigs_to_genome(inputs, outputs):
+def align_contigs_to_genome_and_index(inputs, outputs):
     contigs_fa = inputs[0]
     output_bam = outputs[0]
     cfg = CONFIG['steps']['align_contigs_to_genome']
@@ -121,7 +122,8 @@ def align_contigs_to_genome(inputs, outputs):
            '| samtools view -h -F 2052 -S - '
            '| samtools sort -o {output_bam} - '.format(**cfg))
     U.execute(cmd)
-
+    index_cmd = 'samtools index {output_bam}'.format(**cfg)
+    U.execute(index_cmd)
 
 # left as a reference of converting bam to fa
 # @R.mkdir(align_contigs_to_genome, R.formatter(), '{subpath[0][1]}/contigs_bam2fa')
@@ -136,12 +138,12 @@ def align_contigs_to_genome(inputs, outputs):
 #     U.execute(cmd)
 
 
-@R.transform(abyss, R.formatter(), [
-    '{subpath[0][1]}/contigs_bam2fa/cba-6.fa.pac',
-    '{subpath[0][1]}/contigs_bam2fa/cba-6.fa.bwt',
-    '{subpath[0][1]}/contigs_bam2fa/cba-6.fa.ann',
-    '{subpath[0][1]}/contigs_bam2fa/cba-6.fa.amb',
-    '{subpath[0][1]}/contigs_bam2fa/cba-6.fa.sa',
+@R.transform(transabyss, R.formatter(), [
+    '{subpath[0][1]}/contigs_bam2fa/merged.fa.pac',
+    '{subpath[0][1]}/contigs_bam2fa/merged.fa.bwt',
+    '{subpath[0][1]}/contigs_bam2fa/merged.fa.ann',
+    '{subpath[0][1]}/contigs_bam2fa/merged.fa.amb',
+    '{subpath[0][1]}/contigs_bam2fa/merged.fa.sa',
 ])
 def index_contigs_fa(inputs, outputs):
     contigs_fa = inputs[0]
@@ -153,8 +155,9 @@ def index_contigs_fa(inputs, outputs):
 @R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/align_reads_to_contigs')
 @R.transform(biobloomcategorizer, R.formatter(), [
     '{subpath[0][1]}/align_reads_to_contigs/cba.bam',
+    '{subpath[0][1]}/align_reads_to_contigs/cba.bam.bai',
 ])
-def align_reads_to_contigs(inputs, outputs):
+def align_reads_to_contigs_and_index(inputs, outputs):
     input_fq1, input_fq2 = inputs
     # the same as the output contigs.fa from abyss
     index = os.path.join(CONFIG['output_dir'], 'abyss', 'cba-6.fa')
@@ -163,6 +166,8 @@ def align_reads_to_contigs(inputs, outputs):
            '| samtools view -h -F 2052 -S - '
            '| samtools sort -o {output_bam}'.format(**locals()))
     U.execute(cmd)
+    index_cmd = 'samtools index {output_bam}'.format(**locals())
+    U.execute(index_cmd)
 
 
 if __name__ == "__main__":

@@ -54,21 +54,23 @@ def biobloomcategorizer(inputs, outputs):
     U.execute(cmd)
 
 
-@R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/abyss')
+@R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/transabyss')
 @R.transform(biobloomcategorizer, R.formatter(), [
-    os.path.join(CONFIG['output_dir'], 'abyss', 'cba-6.fa')
+    os.path.join(CONFIG['output_dir'], 'transabyss', 'merged.fa')
 ])
 @U.timeit
-def abyss(inputs, outputs):
+def transabyss(inputs, outputs):
+    """Run transabyss for three kmer sizes and transabyss-merge"""
     # better use absolute path because of -C option in abyss, which changes the
     # relative path.
     input_fq1, input_fq2 = [os.path.abspath(_) for _ in inputs]
     contigs_fa = outputs[0]
-    cfg = CONFIG['steps']['abyss']
+    cfg = CONFIG['steps']['transabyss']
+    kmer_sizes = cfg['kmer_sizes']
     too_small, read_count = U.fastq_too_small(input_fq1)
 
+    cfg.update(locals())
     if too_small:
-        cfg.update(locals())
         msg = ('Only {read_count} (expect > {num_reads_cutoff}) reads are found '
                'in\n\t{input_fq1}\n\t{input_fq2}\n'
                'too small for assembly').format(**cfg)
@@ -80,24 +82,34 @@ def abyss(inputs, outputs):
 
     # Note: name=a won't work for abyss-pe because of the particular way
     # how abyss reads command line parameters
-    cmd = ("abyss-pe "
-           "name=cba "
-           "k={kmer_size} "
-           "in='{input_fq1} {input_fq2}' "
-           "np={num_cpus} "
-           "-C {outdir}").format(kmer_size=cfg['kmer_size'], **locals())
-    U.execute(cmd)
+    for k in kmer_sizes:
+        kmer_outdir = os.path.join(outdir, 'k{0}'.format(k))
+        if not os.path.exists(kmer_outdir):
+            os.mkdir(kmer_outdir)
+        cmd = ('transabyss '
+               '--pe {input_fq1} {input_fq2} '
+               '--outdir {kmer_outdir} '
+               '--name aaa '
+               '--island 0 '
+               '-c 1 --kmer {k}'.format(kmer_outdir=kmer_outdir, k=k, **cfg))
+        U.execute(cmd)
 
-# will replace abyss with the following transabyss commands
-# transabyss --pe experiment/tasrkleat-results/biobloomcategorizer/cba_targetUTRcell2009_1.fq experiment/tasrkleat-results/biobloomcategorizer/cba_targetUTRcell2009_2.fq  --outdir k25  --name aaa --island 0 -c 1 --kmer 25
-# transabyss --pe experiment/tasrkleat-results/biobloomcategorizer/cba_targetUTRcell2009_1.fq experiment/tasrkleat-results/biobloomcategorizer/cba_targetUTRcell2009_2.fq  --outdir k35  --name aaa --island 0 -c 1 --kmer 35
-# transabyss --pe experiment/tasrkleat-results/biobloomcategorizer/cba_targetUTRcell2009_1.fq experiment/tasrkleat-results/biobloomcategorizer/cba_targetUTRcell2009_2.fq  --outdir k45  --name aaa --island 0 -c 1 --kmer 45
-# # output ./transabyss-merged.fa
-# transabyss-merge k{25,35,45}/aaa-6.fa --mink 25 --maxk 45
+    fas_to_merge = ' '.join([
+        os.path.join(outdir, 'k{0}/aaa-6.fa'.format(__))
+        for __ in kmer_sizes
+    ])
+    merge_cmd = ('transabyss-merge {fas_to_merge} '
+                 '--mink {min_k} '
+                 '--maxk {max_k} '
+                 '--out {contigs_fa}'.format(
+                     min_k=min(kmer_sizes),
+                     max_k=max(kmer_sizes),
+                     **locals()))
+    U.execute(merge_cmd)
 
 
-@R.mkdir(abyss, R.formatter(), '{subpath[0][1]}/align_contigs_to_genome')
-@R.transform(abyss, R.formatter(), [
+@R.mkdir(transabyss, R.formatter(), '{subpath[0][1]}/align_contigs_to_genome')
+@R.transform(transabyss, R.formatter(), [
     '{subpath[0][1]}/align_contigs_to_genome/cba.sort.bam',
 ])
 def align_contigs_to_genome(inputs, outputs):

@@ -26,15 +26,14 @@ def parse_args():
               "corresponding txt file (.txt)"))
 
     parser.add_argument(
-        '-u', '--abyss-num-reads-cutoff', type=int, default=50,
-        help=("Under which tasrcloud consider there are too few reads and "
-              "run abyss at all. The default 50 is arbitrarily chosen"))
+        '-u', '--num-reads-too-small-cutoff', type=int, default=50,
+        help=("Under which it's considered that there are too few reads and "
+              "run assembly at all. The default 50 is arbitrarily chosen"))
 
     parser.add_argument(
-        '-k', '--abyss-kmer-size', type=int, required=True,
-        help=('the kmer size for running abyss, typically go for roughly '
-              '~half the read length as a first trial. '
-              'e.g. for 76bp, k=36 could be adequate'))
+        '-k', '--transabyss-kmer-sizes', type=int, nargs=3, required=True,
+        help=('the 3 kmer sizes for running transabyss, typically go for roughly '
+              'e.g. --transabyss-kmer-sizes 25 35 45'))
 
     parser.add_argument(
         '--reference-genome', required=True,

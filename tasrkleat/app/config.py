@@ -21,9 +21,9 @@ def gen_config():
                 'bf_name': re.sub('\.bf$', '', os.path.basename(args.input_bf)),
             },
 
-            'abyss': {
-                'num_reads_cutoff': args.abyss_num_reads_cutoff,
-                'kmer_size': args.abyss_kmer_size,
+            'transabyss': {
+                'num_reads_cutoff': args.num_reads_too_small_cutoff,
+                'kmer_sizes': args.transabyss_kmer_sizes,
             },
 
             'align_contigs_to_genome': {

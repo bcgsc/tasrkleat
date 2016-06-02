@@ -74,8 +74,7 @@ def transabyss(inputs, outputs):
         msg = ('Only {read_count} (expect > {num_reads_cutoff}) reads are found '
                'in\n\t{input_fq1}\n\t{input_fq2}\n'
                'too small for assembly').format(**cfg)
-        logging.info(msg)
-        return
+        logging.warning(msg)
 
     outdir = os.path.dirname(contigs_fa)
     num_cpus = CONFIG['num_cpus']

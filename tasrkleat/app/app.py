@@ -120,8 +120,14 @@ def align_contigs2genome(inputs, outputs):
            '| samtools view -h -F 2052 -S - '
            '| samtools sort -o {output_bam} - '.format(**cfg))
     U.execute(cmd)
-    index_cmd = 'samtools index {output_bam}'.format(**cfg)
-    U.execute(index_cmd)
+
+
+@R.transform(align_contigs2genome, R.suffix('.bam'), output='.bam.bai')
+def index_contigs2genome(inputs, output):
+    input_bam = inputs[0]
+    cmd = 'samtools index {input_bam}'.format(**locals())
+    U.execute(cmd)
+
 
 # left as a reference of converting bam to fa
 # @R.mkdir(align_contigs_to_genome, R.formatter(), '{subpath[0][1]}/contigs_bam2fa')

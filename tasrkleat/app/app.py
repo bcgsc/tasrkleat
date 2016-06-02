@@ -159,7 +159,7 @@ def index_contigs_fa(inputs, outputs):
 def align_reads_to_contigs_and_index(inputs, outputs):
     input_fq1, input_fq2 = inputs
     # the same as the output contigs.fa from abyss
-    index = os.path.join(CONFIG['output_dir'], 'abyss', 'cba-6.fa')
+    index = os.path.join(CONFIG['output_dir'], 'transabyss', 'merged.fa')
     output_bam = outputs[0]
     cmd = ('bwa mem {index} {input_fq1} {input_fq2} '
            '| samtools view -h -F 2052 -S - '

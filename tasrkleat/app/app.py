@@ -109,7 +109,7 @@ def transabyss(inputs, outputs):
 
 @R.mkdir(transabyss, R.formatter(), '{subpath[0][1]}/align_contigs2genome')
 @R.transform(transabyss, R.formatter(), [
-    '{subpath[0][1]}/align_contigs2genome/cba.sort.bam',
+    '{subpath[0][1]}/align_contigs2genome/cba.sorted.bam',
 ])
 def align_contigs2genome(inputs, outputs):
     contigs_fa = inputs[0]
@@ -158,8 +158,7 @@ def index_contigs_fa(inputs, outputs):
 @R.follows(index_contigs_fa)
 @R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/align_reads2contigs')
 @R.transform(biobloomcategorizer, R.formatter(), [
-    '{subpath[0][1]}/align_reads2contigs/cba.bam',
-    '{subpath[0][1]}/align_reads2contigs/cba.bam.bai',
+    '{subpath[0][1]}/align_reads2contigs/cba.sorted.bam',
 ])
 def align_reads2contigs(inputs, outputs):
     input_fq1, input_fq2 = inputs
@@ -172,6 +171,14 @@ def align_reads2contigs(inputs, outputs):
     U.execute(cmd)
     index_cmd = 'samtools index {output_bam}'.format(**locals())
     U.execute(index_cmd)
+
+
+@R.transform(align_reads2contigs, R.suffix('.bam'), output='.bam.bai')
+def index_reads2contigs(inputs, output):
+    input_bam = inputs[0]
+    cmd = 'samtools index {input_bam}'.format(**locals())
+    U.execute(cmd)
+
 
 
 if __name__ == "__main__":

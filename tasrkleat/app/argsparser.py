@@ -46,7 +46,8 @@ def parse_args():
 
     parser.add_argument(
         '--gtf', required=True,
-        help=('genome annotations. e.g. /path/to/Homo_sapiens.GRCh37.75.gtf'))
+        help=('genome annotations. e.g. /path/to/Homo_sapiens.GRCh37.75.gtf, '
+              'and it must have been indexed'))
 
     # parser.add_argument(
     #     '-t', '--num-threads', default=multiprocessing.cpu_count(),

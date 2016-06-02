@@ -2,6 +2,7 @@
 
 import os
 import re
+import itertools
 
 import ruffus as R
 
@@ -180,6 +181,27 @@ def index_reads2contigs(inputs, output):
     U.execute(cmd)
 
 
+@R.mkdir(align_reads2contigs, R.formatter(), '{subpath[0][1]}/kleat')
+@R.merge([transabyss,
+          align_contigs2genome,
+          align_reads2contigs],
+         os.path.join(CONFIG['output_dir'], 'kleat/cba.KLEAT'))
+def kleat(inputs, output):
+    print(inputs)
+    contigs_fa, c2g_bam, r2c_bam = list(itertools.chain(*inputs))
+    output_prefix = re.sub('\.KLEAT$', '', output)
+    cfg = CONFIG['steps']['kleat']
+    cmd = ' '.join(['python',
+                    # use the KLEAT.py that comes with package
+                    os.path.join(os.path.dirname(__file__), 'KLEAT.py'),
+                    c2g_bam,
+                    contigs_fa,
+                    cfg['reference_genome'],
+                    cfg['annotations'],
+                    r2c_bam,
+                    output_prefix])
+    print(cmd)
+    U.execute(cmd)
 
 if __name__ == "__main__":
     R.pipeline_run()

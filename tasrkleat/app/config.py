@@ -30,6 +30,11 @@ def gen_config():
                 'reference_genome_bwa_index': args.reference_genome_bwa_index
             },
 
+            'kleat': {
+                'reference_genome': args.reference_genome,
+                'annotations': args.gtf,
+            },
+
         },
 
     }

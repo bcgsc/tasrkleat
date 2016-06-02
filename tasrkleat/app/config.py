@@ -26,7 +26,7 @@ def gen_config():
                 'kmer_sizes': args.transabyss_kmer_sizes,
             },
 
-            'align_contigs_to_genome': {
+            'align_contigs2genome': {
                 'reference_genome_bwa_index': args.reference_genome_bwa_index
             },
 

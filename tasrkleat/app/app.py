@@ -107,15 +107,14 @@ def transabyss(inputs, outputs):
     U.execute(merge_cmd)
 
 
-@R.mkdir(transabyss, R.formatter(), '{subpath[0][1]}/align_contigs_to_genome')
+@R.mkdir(transabyss, R.formatter(), '{subpath[0][1]}/align_contigs2genome')
 @R.transform(transabyss, R.formatter(), [
-    '{subpath[0][1]}/align_contigs_to_genome/cba.sort.bam',
-    '{subpath[0][1]}/align_contigs_to_genome/cba.sort.bam.bai',
+    '{subpath[0][1]}/align_contigs2genome/cba.sort.bam',
 ])
-def align_contigs_to_genome_and_index(inputs, outputs):
+def align_contigs2genome(inputs, outputs):
     contigs_fa = inputs[0]
     output_bam = outputs[0]
-    cfg = CONFIG['steps']['align_contigs_to_genome']
+    cfg = CONFIG['steps']['align_contigs2genome']
     cfg.update(locals())
     cmd = ('bwa mem {reference_genome_bwa_index} {contigs_fa} '
            '| samtools view -h -F 2052 -S - '
@@ -151,12 +150,12 @@ def index_contigs_fa(inputs, outputs):
 
 
 @R.follows(index_contigs_fa)
-@R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/align_reads_to_contigs')
+@R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/align_reads2contigs')
 @R.transform(biobloomcategorizer, R.formatter(), [
-    '{subpath[0][1]}/align_reads_to_contigs/cba.bam',
-    '{subpath[0][1]}/align_reads_to_contigs/cba.bam.bai',
+    '{subpath[0][1]}/align_reads2contigs/cba.bam',
+    '{subpath[0][1]}/align_reads2contigs/cba.bam.bai',
 ])
-def align_reads_to_contigs_and_index(inputs, outputs):
+def align_reads2contigs(inputs, outputs):
     input_fq1, input_fq2 = inputs
     # the same as the output contigs.fa from abyss
     index = os.path.join(CONFIG['output_dir'], 'transabyss', 'merged.fa')

@@ -143,11 +143,11 @@ def index_contigs2genome(inputs, output):
 
 
 @R.transform(transabyss, R.formatter(), [
-    '{subpath[0][1]}/contigs_bam2fa/merged.fa.pac',
-    '{subpath[0][1]}/contigs_bam2fa/merged.fa.bwt',
-    '{subpath[0][1]}/contigs_bam2fa/merged.fa.ann',
-    '{subpath[0][1]}/contigs_bam2fa/merged.fa.amb',
-    '{subpath[0][1]}/contigs_bam2fa/merged.fa.sa',
+    '{subpath[0][1]}/transabyss/merged.fa.pac',
+    '{subpath[0][1]}/transabyss/merged.fa.bwt',
+    '{subpath[0][1]}/transabyss/merged.fa.ann',
+    '{subpath[0][1]}/transabyss/merged.fa.amb',
+    '{subpath[0][1]}/transabyss/merged.fa.sa',
 ])
 def index_contigs_fa(inputs, outputs):
     contigs_fa = inputs[0]

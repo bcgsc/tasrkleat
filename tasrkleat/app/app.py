@@ -205,7 +205,6 @@ def kleat(inputs, output):
                     cfg['annotations'],
                     r2c_bam,
                     output_prefix])
-    print(cmd)
     U.execute(cmd)
 
 if __name__ == "__main__":

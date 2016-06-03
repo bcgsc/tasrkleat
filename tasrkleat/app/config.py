@@ -11,8 +11,7 @@ def gen_config():
 
     config = {
         # 'input_bam': args.input_bam,
-        'input_fq': args.input_fq,
-        'input_fq2': args.input_fq2,
+        'input_tar': args.input_tar,
         'num_cpus': multiprocessing.cpu_count(),
 
         'steps': {
@@ -40,7 +39,7 @@ def gen_config():
     }
 
     config['output_dir'] = os.path.join(
-        os.path.dirname(config['input_fq']), '{0}-results'.format(project_id))
+        os.path.dirname(config['input_tar']), '{0}-results'.format(project_id))
 
     output_log_file = args.output_log
     if not output_log_file:

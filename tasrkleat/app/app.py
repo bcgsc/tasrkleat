@@ -17,25 +17,30 @@ import pprint
 logger.info('\n{0}'.format(pprint.pformat(CONFIG)))
 
 
-@R.mkdir(CONFIG['input_fq'], R.formatter(),
-         os.path.join(CONFIG['output_dir'], 'biobloomcategorizer'))
-@R.collate(
-    [CONFIG['input_fq'], CONFIG['input_fq2']],
-    R.formatter(),
-    [
-        os.path.join(CONFIG['output_dir'], 'biobloomcategorizer',
-                     'cba_{0}_1.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name'])),
-        os.path.join(CONFIG['output_dir'], 'biobloomcategorizer',
-                     'cba_{0}_2.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']))
+@R.mkdir(CONFIG['input_tar'], R.formatter(),
+         os.path.join(CONFIG['output_dir'], 'extract_tarball'))
+@R.split(CONFIG['input_tar'],
+         os.path.join(CONFIG['output_dir'], 'extract_tarball', '*_[12].fastq'))
+def extract_tarball(input_tarball, outputs):
+    output_dir = os.path.join(CONFIG['output_dir'], 'extract_tarball')
+    cmd = 'tar zxf {input_tarball} -C {output_dir}'.format(**locals())
+    U.execute(cmd)
+
+
+@R.mkdir(extract_tarball, R.formatter(), '{subpath[0][1]}/biobloomcategorizer')
+@R.collate(extract_tarball, R.formatter(), [
+    os.path.join(
+        CONFIG['output_dir'], 'biobloomcategorizer',
+        'cba_{0}_1.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name'])),
+    os.path.join(
+        CONFIG['output_dir'], 'biobloomcategorizer',
+        'cba_{0}_2.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']))
     ]
 )
 @U.timeit
 def biobloomcategorizer(inputs, outputs):
-    # input_fq1, input_fq2 = inputs
-    # instead of the above line, assign input_fq1 & input_fq2, respectively
-    input_fq1 = CONFIG['input_fq']
-    input_fq2 = CONFIG['input_fq2']
-
+    """categorize input reads with biobloomcategorizer"""
+    input_fq1, input_fq2 = sorted(inputs)
     output_fq1, output_fq2 = outputs
     output_dir = os.path.dirname(output_fq1)
     output_prefix = os.path.join(output_dir, 'cba')

@@ -11,14 +11,9 @@ def parse_args():
     #     '-i', '--input-bam', required=True,
     #     help=("input bam file"))
 
-
     parser.add_argument(
-        '--input-fq', required=True,
-        help=("input fastq file"))
-
-    parser.add_argument(
-        '--input-fq2', required=True,
-        help=("input fastq file of the second end"))
+        '--input-tar', required=True,
+        help=("input tar.gz file that contains _1.fastq & _2.fastq"))
 
     parser.add_argument(
         '-f', '--input-bf', required=True,

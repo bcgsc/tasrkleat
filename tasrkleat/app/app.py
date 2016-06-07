@@ -20,11 +20,41 @@ logger.info('\n{0}'.format(pprint.pformat(CONFIG)))
 @R.mkdir(CONFIG['input_tar'], R.formatter(),
          os.path.join(CONFIG['output_dir'], 'extract_tarball'))
 @R.split(CONFIG['input_tar'],
-         os.path.join(CONFIG['output_dir'], 'extract_tarball', '*_[12].fastq'))
+         os.path.join(CONFIG['output_dir'], 'extract_tarball', 'cba_[12].fastq'))
 def extract_tarball(input_tarball, outputs):
     output_dir = os.path.join(CONFIG['output_dir'], 'extract_tarball')
-    cmd = 'tar zxf {input_tarball} -C {output_dir}'.format(**locals())
+    if input_tarball.endswith('.tar.gz'):
+        cmd = 'tar zxfv {input_tarball} -C {output_dir}'.format(**locals())
+    elif input_tarball.endswith('.tar'):
+        cmd = 'tar  xfv {input_tarball} -C {output_dir}'.format(**locals())
+    else:
+        raise ValueError(
+            'unrecognized tarball format "{0}"'.format(input_tarball))
     U.execute(cmd)
+
+    # list of extracted files
+    exfiles = [os.path.join(output_dir, __) for __ in os.listdir(output_dir)]
+    in_fq1s = sorted([__ for __ in exfiles
+                      if re.search('.*_1\.fastq(?:\.gz)?$', __)])
+    in_fq2s = sorted([__ for __ in exfiles
+                      if re.search('.*_2\.fastq(?:\.gz)?$', __)])
+
+    out_fq1 = os.path.join(output_dir, 'cba_1.fastq')
+    out_fq2 = os.path.join(output_dir, 'cba_2.fastq')
+    if len(in_fq1s) == len(in_fq1s):
+        if in_fq1s[0].endswith('.gz'):
+            U.execute('gunzip -c {0} > {1}'.format(' '.join(in_fq1s), out_fq1))
+            U.execute('gunzip -c {0} > {1}'.format(' '.join(in_fq2s), out_fq2))
+        else:
+            if len(in_fq1s) == 1:
+                os.rename(in_fq1s[0], out_fq1)
+                os.rename(in_fq2s[0], out_fq2)
+            elif len(in_fq1s) > 1:
+                U.execute('cat {0} > {1}'.format(' '.join(in_fq1s), out_fq1))
+                U.execute('cat {0} > {1}'.format(' '.join(in_fq2s), out_fq2))
+    else:
+        raise ValueError("the numbers of _1.fastq and _2.fastq don't match: "
+                         "{0} vs {1}".format(len(in_fq1s), len(in_fq2s)))
 
 
 @R.mkdir(extract_tarball, R.formatter(), '{subpath[0][1]}/biobloomcategorizer')

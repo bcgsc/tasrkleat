@@ -26,8 +26,9 @@ def parse_args():
               "run assembly at all. The default 50 is arbitrarily chosen"))
 
     parser.add_argument(
-        '-k', '--transabyss-kmer-sizes', type=int, nargs=3, required=True,
-        help=('the 3 kmer sizes for running transabyss, typically go for roughly '
+        '-k', '--transabyss-kmer-sizes', type=int, nargs='+', required=True,
+        help=('the kmer sizes for running transabyss and latered merged with '
+              'transabyss-merge, typically go for roughly '
               'e.g. --transabyss-kmer-sizes 25 35 45'))
 
     parser.add_argument(

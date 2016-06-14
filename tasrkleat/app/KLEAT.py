@@ -35,7 +35,7 @@ parser.add_argument('-k', '--track', metavar=('[name]','[description]'), help='N
 parser.add_argument('--rgb', help='RGB value of BED graph. Default is 0,0,255', default='0,0,255')
 parser.add_argument('-c', help='Specify a contig/s to look at.', nargs='+')
 parser.add_argument('--link', action='store_true', help='Enable searching for cleavage site link evidence. This will substantially increase runtime.')
-parser.add_argument('--no-extend', action='store_false', help='Disable the feature which searches beyond the scope of the contig for cleavage site evidence.')
+parser.add_argument('--no_extend', action='store_false', help='Disable the feature which searches beyond the scope of the contig for cleavage site evidence.')
 parser.add_argument('-limit', type=int, help='Limit the number of contigs to look at')
 parser.add_argument('--debug', action='store_true', help='Print debug statements.')
 
@@ -1748,20 +1748,26 @@ def findGenomicPas(chrom,coord,window=50):
         results = [sorted(results, key=lambda(x):x[1])[0]]
     return results
 
-def findBindingSites(a, cleavage_site, strand):
+def findBindingSites(a, cleavage_site, strand, refseq, window=50):
     binding_sites = {'AATAAA':1,'ATTAAA':2,'AGTAAA':3,'TATAAA':4,
                      'CATAAA':5,'GATAAA':6,'AATATA':7,'AATACA':8,
                      'AATAGA':9,'AAAAAG':10,'ACTAAA':11,'AAGAAA':12,
                      'AATGAA':13,'TTTAAA':14,'AAAACA':15,'GGGGCT':16}
     results = []
     if strand == '+':
-        seq = refseq.fetch(a['target'],cleavage_site-50,cleavage_site)
+        try:
+            seq = refseq.fetch(a['target'],cleavage_site-window,cleavage_site)
+        except (ValueError, IndexError) as e:
+            return []
         for i in xrange(len(seq)):
             hexamer = seq[i:i+6]
             if (hexamer in binding_sites):
-                results.append([cleavage_site+i-50+1,binding_sites[hexamer]])
+                results.append([cleavage_site+i-window+1,binding_sites[hexamer]])
     else:
-        seq = refseq.fetch(a['target'],cleavage_site,cleavage_site+50)
+        try:
+            seq = refseq.fetch(a['target'],cleavage_site,cleavage_site+window)
+        except (ValueError, IndexError) as e:
+            return []
         for i in xrange(len(seq)):
             hexamer = revComp(seq[i:i+6])
             if (hexamer in binding_sites):
@@ -1769,7 +1775,8 @@ def findBindingSites(a, cleavage_site, strand):
     # Enable this to fix BTL-513
     if results:
         results = [sorted(results, key=lambda(x):x[1])[0]]
-    return results
+        return results
+    return []
 
 def loadResults(outfile):
     with open(outfile, 'r') as o:
@@ -1950,7 +1957,7 @@ for align in aligns:
                    'ests': None, 'a': {'target': a['target'],
                    'utr3s': a['utr3s'],'qname': align.query_name}}
             try:
-                res['a']['binding_sites'] = findBindingSites(a, res['cleavage_site'],a['inf_strand'])
+                res['a']['binding_sites'] = findBindingSites(a, res['cleavage_site'], feature_dict[a['target']][res['txt']]['strand'], refseq)
             except TypeError:
                 res['a']['binding_sites'] = None
             contig_sites[align.query_name] = res
@@ -1962,7 +1969,8 @@ for align in aligns:
                 a['inf_strand'] = '+'
             # If there is already a cs close to the end, we don't need the implied one
             try:
-                a['binding_sites'] = findBindingSites(a, result['cleavage_site'],a['inf_strand'])
+                #a['binding_sites'] = findBindingSites(a, result['cleavage_site'], a['inf_strand'])
+                a['binding_sites'] = findBindingSites(a, result['cleavage_site'], feature_dict[a['target']][result['txt']]['strand'], refseq)
             except TypeError:
                 a['binding_sites'] = None
             result['a'] = {'target': a['target'], 'qname': align.query_name, 'binding_sites': a['binding_sites'], 'utr3s': a['utr3s']}

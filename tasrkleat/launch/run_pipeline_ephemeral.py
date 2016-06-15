@@ -48,7 +48,7 @@ def create_pipeline_body(input_gs_tar):
                     '--input-tar /mnt/data/input.tar '
                     '--input-bf /mnt/data/combined.bf '
                     '--transabyss-kmer-sizes ${TRANSABYSS_KMER_SIZES} '
-                    '--reference-genome mnt/data/reference.fa '
+                    '--reference-genome /mnt/data/reference.fa '
                     '--reference-genome-bwa-index /mnt/data/reference.fa '
                     '--gtf reference.gtf.gz '
                 ),

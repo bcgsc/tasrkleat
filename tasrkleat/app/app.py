@@ -238,4 +238,6 @@ def kleat(inputs, output):
     U.execute(cmd)
 
 if __name__ == "__main__":
+    # R.pipeline_printout_graph(
+    #     os.path.join(CONFIG['output_dir'], 'flowchart.svg'), 'svg')
     R.pipeline_run()

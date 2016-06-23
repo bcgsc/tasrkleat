@@ -217,7 +217,7 @@ def index_contigs_fa(inputs, outputs):
     '{subpath[0][1]}/align_reads2contigs/cba.sorted.bam',
 ])
 def align_reads2contigs(inputs, outputs):
-    input_fq1, input_fq2 = inputs
+    input_fq1, input_fq2, _, _ = inputs
     # the same as the output contigs.fa from abyss
     index = os.path.join(CONFIG['output_dir'], 'transabyss', 'merged.fa')
     output_bam = outputs[0]

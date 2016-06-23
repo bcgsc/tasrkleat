@@ -105,7 +105,7 @@ def transabyss(inputs, outputs):
     """Run transabyss for three kmer sizes and transabyss-merge"""
     # better use absolute path because of -C option in abyss, which changes the
     # relative path.
-    input_fq1, input_fq2 = [os.path.abspath(_) for _ in inputs]
+    input_fq1, input_fq2, _, _ = [os.path.abspath(_) for _ in inputs]
     contigs_fa = outputs[0]
     cfg = CONFIG['steps']['transabyss']
     kmer_sizes = cfg['kmer_sizes']

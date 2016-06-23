@@ -59,19 +59,20 @@ def extract_tarball(input_tarball, outputs):
 
 @R.mkdir(extract_tarball, R.formatter(), '{subpath[0][1]}/biobloomcategorizer')
 @R.collate(extract_tarball, R.formatter(), [
-    os.path.join(
-        CONFIG['output_dir'], 'biobloomcategorizer',
-        'cba_{0}_1.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name'])),
-    os.path.join(
-        CONFIG['output_dir'], 'biobloomcategorizer',
-        'cba_{0}_2.fq'.format(CONFIG['steps']['biobloomcategorizer']['bf_name']))
-    ]
-)
+    os.path.join(CONFIG['output_dir'],
+                 'biobloomcategorizer',
+                 'cba_{bf_name}_{i}.{ext}'.format(
+                     bf_name=CONFIG['steps']['biobloomcategorizer']['bf_name'],
+                     i=i,
+                     ext=ext))
+    for ext in ['fq', 'fq.gz']
+    for i in [1, 2]
+])
 @U.timeit
 def biobloomcategorizer(inputs, outputs):
     """categorize input reads with biobloomcategorizer"""
     input_fq1, input_fq2 = sorted(inputs)
-    output_fq1, output_fq2 = outputs
+    output_fq1, output_fq2, output_fq1_gz, output_fq2_gz = outputs
     output_dir = os.path.dirname(output_fq1)
     output_prefix = os.path.join(output_dir, 'cba')
     num_cpus = CONFIG['num_cpus']
@@ -88,6 +89,11 @@ def biobloomcategorizer(inputs, outputs):
            "-t {num_cpus} "
            "--fq {input_fq1} {input_fq2}".format(**cfg))
     U.execute(cmd)
+
+    # if put gzip part in a new task, it's too cumbersome to compose the output
+    # file names as seen above
+    U.execute('gzip -c {output_fq1} > {output_fq1_gz}'.format(**locals()))
+    U.execute('gzip -c {output_fq2} > {output_fq2_gz}'.format(**locals()))
 
 
 @R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/transabyss')

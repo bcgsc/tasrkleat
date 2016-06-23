@@ -217,6 +217,8 @@ def index_reads2contigs(inputs, output):
 
 
 @R.mkdir(align_reads2contigs, R.formatter(), '{subpath[0][1]}/kleat')
+@R.follows(index_reads2contigs)
+@R.follows(index_contigs2genome)
 @R.merge([transabyss,
           align_contigs2genome,
           align_reads2contigs],

@@ -13,6 +13,7 @@ def gen_config():
         # 'input_bam': args.input_bam,
         'input_tar': args.input_tar,
         'num_cpus': multiprocessing.cpu_count(),
+        'args': args,
 
         'steps': {
             'biobloomcategorizer': {

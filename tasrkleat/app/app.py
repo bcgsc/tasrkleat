@@ -10,7 +10,7 @@ import ruffus as R
 from config import CONFIG
 import logging.config
 logging.config.dictConfig(CONFIG['logging'])
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('tasrkleat')
 
 import utils as U
 

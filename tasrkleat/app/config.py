@@ -63,7 +63,7 @@ def configure_logging_dict(output_log_file):
         'disable_existing_loggers': True,
 
         'loggers': {
-            '__main__': {
+            'tasrkleat': {
                 'handlers': ['screen', 'file'],
                 'level': 'DEBUG',
                 'propagate': True,

@@ -78,7 +78,9 @@ def execute(cmd, flag_file=None, msg_id='', debug=False):
         )
         ioselect(proc)
         returncode = proc.returncode
-        msg = '{0}: returncode: {1}. CMD: "{2}"'.format(msg_id, returncode, cmd)
+        msg = 'returncode: {returncode}. CMD: "{cmd}"'.format(**locals())
+        if msg_id:
+            msg = '{0}: {1}'.format(msg_id, msg)
 
         if returncode != 0:
             logger.error(msg)
@@ -88,9 +90,11 @@ def execute(cmd, flag_file=None, msg_id='', debug=False):
                 touch(flag_file, cmd)
         return returncode
     except OSError as err:
-        logger.exception(
-            '{0}: failed to start, raising OSError {1}. '
-            'CMD: "{2}"'.format(msg_id, err, cmd))
+        except_msg = ('failed to start, raising OSError {err}. '
+                      'CMD: "{cmd}"'.format(**locals()))
+        if msg_id:
+            except_msg = '{0}: {1}'.format(msg_id, except_msg)
+        logger.exception(except_msg)
 
 
 def ioselect(proc):

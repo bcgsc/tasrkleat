@@ -259,8 +259,22 @@ def kleat(inputs, output):
                     output_prefix])
     U.execute(cmd)
 
+
+def cleanup(outdir):
+    """
+    remove unwanted files before the results would be transferred to google
+    cloud storage
+
+    :outdir: the dir where initial tasrkleat results are located
+    """
+    U.execute('rm -rfv {0}'.format(os.path.join(outdir, 'extract_tarball')))
+    U.execute('rm -rfv {0}/*.fq'.format(os.path.join(outdir, 'biobloomcategorizer')))
+    # remove huge hidden files in kleat
+    U.execute('rm -rfv {0}.*').format(os.path.join(outdir, 'kleat'))
+
 if __name__ == "__main__":
     # R.pipeline_printout_graph(
     #     os.path.join(CONFIG['output_dir'], 'flowchart.svg'), 'svg')
     # R.pipeline_run()
     R.cmdline.run(CONFIG['args'])
+    cleanup(CONFIG['output_dir'])

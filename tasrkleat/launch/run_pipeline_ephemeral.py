@@ -50,7 +50,7 @@ def create_pipeline_body(input_gs_tar):
                     '--transabyss-kmer-sizes ${TRANSABYSS_KMER_SIZES} '
                     '--reference-genome /mnt/data/reference.fa '
                     '--reference-genome-bwa-index /mnt/data/reference.fa '
-                    '--gtf reference.gtf.gz '
+                    '--gtf /mnt/data/reference.gtf.gz '
                 ),
 
                 # 'imageName': 'us.gcr.io/{0}/bamqc'.format(PROJECT_ID),
@@ -209,7 +209,7 @@ def create_pipeline_body(input_gs_tar):
 
                 # 'preemptible': True,
                 'minimumCpuCores': 1,
-                # 'minimumRamGb': 25,
+                'minimumRamGb': 10, #  Defaults to 3.75 (GB)
             }
         },
 

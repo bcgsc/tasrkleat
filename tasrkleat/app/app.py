@@ -267,10 +267,16 @@ def cleanup(outdir):
 
     :outdir: the dir where initial tasrkleat results are located
     """
-    U.execute('rm -rfv {0}'.format(os.path.join(outdir, 'extract_tarball')))
-    U.execute('rm -rfv {0}/*.fq'.format(os.path.join(outdir, 'biobloomcategorizer')))
+    # remove the original sequence files
+    U.execute('rm -rfv {0}'.format(
+        os.path.join(outdir, 'extract_tarball')))
+    # remove unecessary fq files
+    U.execute('rm -rfv {0}/*.fq'.format(
+        os.path.join(outdir, 'biobloomcategorizer')))
     # remove huge hidden files in kleat
-    U.execute('rm -rfv {0}.*').format(os.path.join(outdir, 'kleat'))
+    U.execute('rm -rfv {0}/.*'.format(
+        os.path.join(outdir, 'kleat')))
+
 
 if __name__ == "__main__":
     # R.pipeline_printout_graph(

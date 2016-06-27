@@ -35,6 +35,12 @@ def gen_config():
                 'annotations': args.gtf,
             },
 
+            'transfer': {
+                # add to the end of the path so that it would be created if not
+                # exists already according to gsutil cp --help
+                'output_gsc_path': args.output_gsc_path.rstrip('/') + '/',
+            },
+
         },
 
     }

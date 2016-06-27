@@ -54,5 +54,10 @@ def parse_args():
         '--output-log',
         help='output log file, default to <current_dir>/bamqc.log')
 
+    parser.add_argument(
+        '--output-gsc-path', required=True,
+        help=('output Google Cloud Storage path. All results will be copied '
+              'back to this path'))
+
     args = parser.parse_args()
     return args

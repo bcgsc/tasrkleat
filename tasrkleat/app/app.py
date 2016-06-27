@@ -278,9 +278,18 @@ def cleanup(outdir):
         os.path.join(outdir, 'kleat')))
 
 
+@R.follows(biobloomcategorizer)
+def transfer():
+    cleanup(CONFIG['output_dir'])
+
+    cfg = CONFIG['steps']['transfer']
+    cfg['output_dir'] = CONFIG['output_dir']
+    cmd = 'gsutil -m cp -r {output_dir} {output_gsc_path}'.format(**cfg)
+    U.execute(cmd)
+
+
 if __name__ == "__main__":
     # R.pipeline_printout_graph(
     #     os.path.join(CONFIG['output_dir'], 'flowchart.svg'), 'svg')
-    # R.pipeline_run()
     R.cmdline.run(CONFIG['args'])
-    cleanup(CONFIG['output_dir'])
+

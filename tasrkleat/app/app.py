@@ -292,4 +292,3 @@ if __name__ == "__main__":
     # R.pipeline_printout_graph(
     #     os.path.join(CONFIG['output_dir'], 'flowchart.svg'), 'svg')
     R.cmdline.run(CONFIG['args'])
-

@@ -87,6 +87,15 @@ RUN wget http://research-pub.gene.com/gmap/src/gmap-gsnap-2014-03-28.v2.tar.gz  
     && make install \
     && cd .. && rm -rf gmap-gsnap-2014-03-28.v2.tar.gz gmap-2014-03-28
 
+# https://cloud.google.com/sdk/docs/#install_the_latest_version_cloudsdk_current_version
+ENV CLOUD_SDK_REPO="cloud-sdk-trusty"
+RUN echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+RUN sudo apt-get update && sudo apt-get install google-cloud-sdk
+
+# Run gcloud init to get started
+RUN gcloud init
+
 ENV PROJECT_ID=tasrkleat
 ENV _PROJECT_DIR ${HOME}/local/${PROJECT_ID}
 ENV PATH=${_PROJECT_DIR}:${PATH}

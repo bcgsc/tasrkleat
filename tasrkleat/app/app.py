@@ -278,7 +278,7 @@ def cleanup(outdir):
         os.path.join(outdir, 'kleat')))
 
 
-@R.follows(biobloomcategorizer)
+@R.follows(kleat)
 def transfer():
     cleanup(CONFIG['output_dir'])
 

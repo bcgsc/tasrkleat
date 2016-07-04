@@ -4,6 +4,7 @@ import os
 import sys
 import re
 import itertools
+import subprocess
 
 import ruffus as R
 
@@ -285,8 +286,11 @@ def transfer():
 
     cfg = CONFIG['steps']['transfer']
     cfg['output_dir'] = CONFIG['output_dir']
-    cmd = 'gsutil -m cp -r {output_dir} {output_gsc_path}'.format(**cfg)
-    U.execute(cmd)
+    cmd = 'gsutil cp -r {output_dir} {output_gsc_path}'.format(**cfg)
+    # use subprocess.call instead of U.execute because the race between
+    # tasrkleat writing gsutil's output to tasrkleat.log and gsutil uploading
+    # tasrkleat.log to GCS can cause upload failure
+    subprocess.call(cmd.split())
 
 
 if __name__ == "__main__":

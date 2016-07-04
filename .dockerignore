@@ -1,9 +1,9 @@
 venv
-launch
 experiment
 results
 *.pyc
 _cmd.sh
-refresh-token/
+launch
+lele*
 
 build.log

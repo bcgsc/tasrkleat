@@ -37,8 +37,8 @@ def parse_args():
               'e.g. /path/to/hg19.fa.fai'))
 
     parser.add_argument(
-        '--reference-genome-bwa-index', required=True,
-        help=('e.g. /path/to/hg19/bwa-index/hg19.fa'))
+        '--reference-genome-gmap-index', required=True,
+        help=('e.g. /path/to/hg19/gmap-index'))
 
     parser.add_argument(
         '--gtf', required=True,

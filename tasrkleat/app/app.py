@@ -171,9 +171,17 @@ def transabyss(inputs, outputs):
 def align_contigs2genome(inputs, outputs):
     contigs_fa = inputs[0]
     output_bam = outputs[0]
+    num_cpus = CONFIG['num_cpus']
     cfg = CONFIG['steps']['align_contigs2genome']
     cfg.update(locals())
-    cmd = ('bwa mem {reference_genome_bwa_index} {contigs_fa} '
+    cmd = ('gmap '
+           '--db hg19 '
+           '--dir {reference_genome_gmap_index} '
+           '--nthreads {num_cpus} '
+           '--format samse '
+           '--npaths 0 '
+           '--chimera-margin 10 '
+           '{contigs_fa}'
            '| samtools view -h -F 2052 -S - '
            '| samtools sort -o {output_bam} - '.format(**cfg))
     U.execute(cmd)

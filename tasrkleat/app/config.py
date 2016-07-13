@@ -27,7 +27,7 @@ def gen_config():
             },
 
             'align_contigs2genome': {
-                'reference_genome_bwa_index': args.reference_genome_bwa_index
+                'reference_genome_gmap_index': args.reference_genome_gmap_index
             },
 
             'kleat': {

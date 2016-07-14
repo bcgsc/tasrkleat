@@ -1,103 +1,113 @@
-# https://raw.githubusercontent.com/sjackman/docker-linuxbrew/master/linuxbrew-core/Dockerfile
+FROM google/cloud-sdk
+MAINTAINER Zhuyi Xue <zxue.bcgsc@gmail.com>
 
-FROM ubuntu
-MAINTAINER Shaun Jackman <sjackman@gmail.com>
-
-RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update
-RUN apt-get install -y curl g++ gawk m4 make patch ruby tcl
 
-RUN useradd -m -s /bin/bash linuxbrew
-RUN echo 'linuxbrew ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers
+RUN apt-get update && apt-get -y install \
+    gcc \
+    python-dev \
+    python-setuptools \
+    && easy_install -U pip \
+    && pip install -U crcmod colorlog ruffus
 
-USER linuxbrew
-WORKDIR /home/linuxbrew
-ENV PATH /home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH
-ENV SHELL /bin/bash
-RUN yes |ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/linuxbrew/go/install)"
-RUN brew doctor || true
+# mpirun needs ssh to run successfully
+# bc is from bsdmainutils, which is needed to run abyss
+# check wheter crcmod is installed with "gsutil version -l"
+RUN apt-get -yf install \
+    automake \
+    bsdmainutils \
+    build-essential \
+    curl \
+    gcc \
+    libboost-all-dev \
+    libopenmpi-dev \
+    libpython-dev \
+    libsparsehash-dev \
+    libsqlite3-dev \
+    openmpi-bin \
+    python-dev \
+    python-setuptools \
+    ssh \
+    unzip \
+    zlib1g-dev
 
-#####################above are about setting up linuxbrew######################
+# RUN curl -OL "http://www.bcgsc.ca/platform/bioinfo/software/biobloomtools/releases/2.0.12/biobloomtools-2.0.12.tar.gz" \
+#     && tar zxf biobloomtools-2.0.12.tar.gz \
+#     && cd biobloomtools-2.0.12 \
+#     && ./configure \
+#     && make \
+#     && make install \
+#     && cd .. && rm -rfv biobloomtools-2.0.12*
 
-# install transabyss requirements
-RUN sudo apt-get install -y python-pip python-dev zlib1g-dev libxml2-dev
-
-RUN sudo pip install pysam
-RUN sudo pip install biopython
-RUN sudo pip install python-igraph
-
-RUN sudo apt-get install -y git
-RUN sudo apt-get install -y default-jre
-RUN sudo apt-get install -y libncurses5 libncurses5-dev
-
-RUN sudo apt-get -yf install \
-automake \
-bsdmainutils \
-build-essential \
-curl \
-gcc \
-libboost-all-dev \
-libopenmpi-dev \
-libpython-dev \
-libsparsehash-dev \
-libsqlite3-dev \
-openmpi-bin \
-python-dev \
-python-setuptools \
-ssh \
-unzip \
-zlib1g-dev
-
-RUN sudo apt-get install -y libopenblas-dev libopenblas-base liblapack3 liblapack-dev liblapacke liblapacke-dev
-
-# by default installing bowtie2 fails without --without-tbb
-RUN brew install -dv homebrew/science/bowtie2 --without-tbb
-
-RUN brew install -dv homebrew/science/trans-abyss
-
-# trans-abyss doesn't work with abyss-1.9.0 selected by linuxbrew, so install
-# an old version instead
-RUN brew uninstall abyss
+# this version can parse @CO header line successfully
+RUN curl -OL "https://github.com/zyxue/biobloom/archive/master.zip" \
+    && unzip master.zip && cd biobloom-master \
+    && ./autogen.sh \
+    && ./configure \
+    && make -j 8 \
+    && make install \
+    && cd .. && rm -rfv master.zip biobloom-master
 
 RUN curl -OL "https://github.com/bcgsc/abyss/releases/download/1.5.2/abyss-1.5.2.tar.gz" \
     && tar zxf abyss-1.5.2.tar.gz \
     && cd abyss-1.5.2 \
     && ./configure --with-mpi=/usr/lib/openmpi \
     && make -j 8 \
-    && sudo make install \
+    && make install \
     && cd .. && rm -rfv abyss-1.5.2*
 
-RUN brew install -dv homebrew/science/biobloomtools
 
-RUN brew install -dv homebrew/science/bwa
+# install transabyss
+RUN apt-get install -y libxml2-dev libpng12-dev
+RUN pip install python-igraph pysam biopython
+ENV MACHTYPE=x86_64
+ENV PATH=${HOME}/bin/${MACHTYPE}:${PATH}
+RUN curl -OL https://users.soe.ucsc.edu/~kent/src/blatSrc35.zip \
+    && unzip blatSrc35.zip \
+    && cd blatSrc \
+    && mkdir -p ${HOME}/bin/${MACHTYPE} \
+    && mkdir -p ./lib/${MACHTYPE} \
+    && make \
+    && cd .. && rm -rfv blatSrc35.zip
+RUN curl -OL https://github.com/bcgsc/transabyss/archive/1.5.2.zip \
+    && unzip 1.5.2
+ENV PATH=/transabyss-1.5.2:${PATH}
 
-RUN sudo apt-get install -y python-pip \
-    && sudo pip install -U colorlog ruffus
 
-ENV HOME /home/linuxbrew
+# install samtools
+RUN apt-get install -y ncurses-dev
+RUN curl -OL https://sourceforge.net/projects/samtools/files/samtools/0.1.18/samtools-0.1.18.tar.bz2 \
+    && tar jxf samtools-0.1.18.tar.bz2 \
+    && cd samtools-0.1.18 \
+    && make
+ENV PATH=/samtools-0.1.18:${PATH}
 
-# use an older version of gmap-gsnap
+
+# install bwa
+RUN curl -OL https://sourceforge.net/projects/bio-bwa/files/bwa-0.7.12.tar.bz2 \
+    && tar jxf bwa-0.7.12.tar.bz2 \
+    && cd bwa-0.7.12 \
+    && make
+ENV PATH=/bwa-0.7.12:${PATH}
+
+    
+# install gmap-gsnap
 ENV PATH=${HOME}/local/gmap/bin:${PATH}
-RUN wget http://research-pub.gene.com/gmap/src/gmap-gsnap-2014-03-28.v2.tar.gz  \
-    && tar zxf gmap-gsnap-2014-03-28.v2.tar.gz \
-    && cd gmap-2014-03-28 \
+RUN wget http://research-pub.gene.com/gmap/src/gmap-gsnap-2014-12-28.tar.gz  \
+    && tar zxf gmap-gsnap-2014-12-28.tar.gz \
+    && cd gmap-2014-12-28 \
     && ./configure --prefix=${HOME}/local/gmap \
     && make \
     && make install \
-    && cd .. && rm -rf gmap-gsnap-2014-03-28.v2.tar.gz gmap-2014-03-28
+    && cd .. && rm -rf gmap-gsnap-2014-12-28.tar.gz gmap-2014-12-28
 
-# https://cloud.google.com/sdk/docs/#install_the_latest_version_cloudsdk_current_version
-ENV CLOUD_SDK_REPO="cloud-sdk-trusty"
-RUN echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
-RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-RUN sudo apt-get update && sudo apt-get install google-cloud-sdk
-
-# Run gcloud init to get started
-RUN gcloud init
 
 ENV PROJECT_ID=tasrkleat
 ENV _PROJECT_DIR ${HOME}/local/${PROJECT_ID}
 ENV PATH=${_PROJECT_DIR}:${PATH}
 RUN mkdir -p ${_PROJECT_DIR}
 ADD app/*.py ${_PROJECT_DIR}/
+
+CMD ["app.py", "--help"]

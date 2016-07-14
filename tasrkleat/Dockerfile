@@ -64,13 +64,8 @@ RUN apt-get install -y libxml2-dev libpng12-dev
 RUN pip install python-igraph pysam biopython
 ENV MACHTYPE=x86_64
 ENV PATH=${HOME}/bin/${MACHTYPE}:${PATH}
-RUN curl -OL https://users.soe.ucsc.edu/~kent/src/blatSrc35.zip \
-    && unzip blatSrc35.zip \
-    && cd blatSrc \
-    && mkdir -p ${HOME}/bin/${MACHTYPE} \
-    && mkdir -p ./lib/${MACHTYPE} \
-    && make \
-    && cd .. && rm -rfv blatSrc35.zip
+RUN curl -OL http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/blat/blat \
+    && mv -v blat /usr/local/bin
 RUN curl -OL https://github.com/bcgsc/transabyss/archive/1.5.2.zip \
     && unzip 1.5.2
 ENV PATH=/transabyss-1.5.2:${PATH}

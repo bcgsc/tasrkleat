@@ -171,6 +171,7 @@ def transabyss(inputs, outputs):
 def align_contigs2genome(inputs, outputs):
     contigs_fa = inputs[0]
     output_bam = outputs[0]
+    output_bam_prefix = re.sub('\.bam$', '', output_bam)
     num_cpus = CONFIG['num_cpus']
     cfg = CONFIG['steps']['align_contigs2genome']
     cfg.update(locals())
@@ -182,8 +183,9 @@ def align_contigs2genome(inputs, outputs):
            '--npaths 0 '
            '--chimera-margin 10 '
            '{contigs_fa}'
-           '| samtools view -h -F 2052 -S - '
-           '| samtools sort -o {output_bam} - '.format(**cfg))
+           '| samtools view -bhS -F 2052 - '
+           # the api for samtools-0.1 and samtools-1.x are different!
+           '| samtools sort - {output_bam_prefix}'.format(**cfg))
     U.execute(cmd)
 
 
@@ -230,12 +232,11 @@ def align_reads2contigs(inputs, outputs):
     # the same as the output contigs.fa from abyss
     index = os.path.join(CONFIG['output_dir'], 'transabyss', 'merged.fa')
     output_bam = outputs[0]
+    output_bam_prefix = re.sub('\.bam$', '', output_bam)
     cmd = ('bwa mem {index} {input_fq1} {input_fq2} '
-           '| samtools view -h -F 2052 -S - '
-           '| samtools sort -o {output_bam}'.format(**locals()))
+           '| samtools view -bhS -F 2052 - '
+           '| samtools sort - {output_bam_prefix}'.format(**locals()))
     U.execute(cmd)
-    index_cmd = 'samtools index {output_bam}'.format(**locals())
-    U.execute(index_cmd)
 
 
 @R.transform(align_reads2contigs, R.suffix('.bam'), output='.bam.bai')

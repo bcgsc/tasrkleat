@@ -295,7 +295,7 @@ def transfer():
 
     cfg = CONFIG['steps']['transfer']
     cfg['output_dir'] = CONFIG['output_dir']
-    cmd = 'gsutil cp -r {output_dir} {output_gsc_path}'.format(**cfg)
+    cmd = 'gsutil -m cp -r {output_dir} {output_gsc_path}'.format(**cfg)
     # use subprocess.call instead of U.execute because the race between
     # tasrkleat writing gsutil's output to tasrkleat.log and gsutil uploading
     # tasrkleat.log to GCS can cause upload failure

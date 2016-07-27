@@ -65,6 +65,7 @@ RUN pip install python-igraph pysam biopython
 ENV MACHTYPE=x86_64
 ENV PATH=${HOME}/bin/${MACHTYPE}:${PATH}
 RUN curl -OL http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/blat/blat \
+    && chmod u+x blat \
     && mv -v blat /usr/local/bin
 RUN curl -OL https://github.com/bcgsc/transabyss/archive/1.5.2.zip \
     && unzip 1.5.2

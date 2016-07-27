@@ -5,6 +5,6 @@ build:
 run: build
 	# Run docker container for debugging purpose locally
 	@docker run --rm -ti \
-	    -v ${PWD}/experiment:/home/linuxbrew/experiment \
-	    -v ${PWD}/app:/home/linuxbrew/app \
+	    -v ${PWD}/experiment:/experiment \
+	    -v ${PWD}/app:/app \
 	    ${USER}/tasrkleat  /bin/bash

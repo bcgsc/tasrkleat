@@ -84,11 +84,13 @@ def biobloomcategorizer(inputs, outputs):
     # single file, which would become problematic when the paired-end read
     # names aren't distinguishable
     cmd = ("biobloomcategorizer "
-           "-p {output_prefix} "
-           "-e "
-           "-i "
-           "-f '{input_bf}' "
-           "-t {num_cpus} "
+           "--prefix {output_prefix} "
+           "--paired_mode "
+           "--score 0.6 "
+           "--with_score "
+           "--inclusive "
+           "--filter_files '{input_bf}' "
+           "--threads {num_cpus} "
            "--fq {input_fq1} {input_fq2}".format(**cfg))
     U.execute(cmd)
 

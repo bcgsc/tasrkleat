@@ -136,24 +136,25 @@ def transabyss(inputs, outputs):
                '--outdir {kmer_outdir} '
                '--name aaa '
                '--island 0 '
-               '-c 1 --kmer {k}'.format(kmer_outdir=kmer_outdir, k=k, **cfg))
+               '--cov 1 '
+               '--kmer {k}'.format(kmer_outdir=kmer_outdir, k=k, **cfg))
         U.execute(cmd)
 
     kmer_sizes_to_merge = []
     fas_to_merge = []
     for ksize in kmer_sizes:
-        fa = os.path.join(outdir, 'k{0}/aaa-6.fa'.format(ksize))
+        fa = os.path.join(outdir, 'k{0}/aaa-final.fa'.format(ksize))
         if os.path.exists(fa):
             fas_to_merge.append(fa)
             kmer_sizes_to_merge.append(ksize)
     fas_to_merge = ' '.join(fas_to_merge)
 
     if len(kmer_sizes_to_merge) == 0:
-        logger.error('no contig files (i.e. aaa-6.fa) are assembled for '
-                         'any of the kmer sizes: {0} from {1} & {2}'.format(
-                             ', '.join(map(str, kmer_sizes)),
-                             input_fq1,
-                             input_fq2))
+        logger.error('no contig files (i.e. aaa-final.fa) are assembled for '
+                     'any of the kmer sizes: {0} from {1} & {2}'.format(
+                         ', '.join(map(str, kmer_sizes)),
+                         input_fq1,
+                         input_fq2))
         sys.exit(1)
 
     merge_cmd = ('transabyss-merge {fas_to_merge} '

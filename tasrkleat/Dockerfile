@@ -53,7 +53,7 @@ RUN curl -OL "https://github.com/zyxue/biobloom/archive/master.zip" \
 RUN curl -OL "https://github.com/bcgsc/abyss/releases/download/1.5.2/abyss-1.5.2.tar.gz" \
     && tar zxf abyss-1.5.2.tar.gz \
     && cd abyss-1.5.2 \
-    && ./configure --with-mpi=/usr/lib/openmpi \
+    && ./configure --with-mpi=/usr/lib/openmpi --enable-maxk=96 \
     && make -j 8 \
     && make install \
     && cd .. && rm -rfv abyss-1.5.2*

@@ -135,8 +135,6 @@ def transabyss(inputs, outputs):
                '--pe {input_fq1} {input_fq2} '
                '--outdir {kmer_outdir} '
                '--name aaa '
-               '--island 0 '
-               '--cov 1 '
                '--kmer {k}'.format(kmer_outdir=kmer_outdir, k=k, **cfg))
         U.execute(cmd)
 

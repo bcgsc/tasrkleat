@@ -185,7 +185,7 @@ def align_contigs2genome(inputs, outputs):
            '--npaths 0 '
            '--chimera-margin 10 '
            '{contigs_fa}'
-           '| samtools view -bhS -F 2052 - '
+           '| samtools view -bhS - '
            # the api for samtools-0.1 and samtools-1.x are different!
            '| samtools sort - {output_bam_prefix}'.format(**cfg))
     U.execute(cmd)
@@ -236,7 +236,7 @@ def align_reads2contigs(inputs, outputs):
     output_bam = outputs[0]
     output_bam_prefix = re.sub('\.bam$', '', output_bam)
     cmd = ('bwa mem {index} {input_fq1} {input_fq2} '
-           '| samtools view -bhS -F 2052 - '
+           '| samtools view -bhS - '
            '| samtools sort - {output_bam_prefix}'.format(**locals()))
     U.execute(cmd)
 

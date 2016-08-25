@@ -28,37 +28,36 @@ parser.add_argument('-e', '--overlap_est', help='Overlap expressed sequence tags
 parser.add_argument('--min_at', help='Minimum number of a|t bases in tail. default is 4.', type=int, default=4)
 parser.add_argument('--max_diff', help='Maximum rate of x to y bases allowed in tail. where x are non a|t bases and y are a|t bases. default: 1 5.', nargs=2, default=[1,5])
 parser.add_argument('--max_diff_link', help='Maximum number of non A|T bases in entire link read. Default is 2.', type=int, default=2)
-parser.add_argument('--max_poor_bases_in_bridge_read', metavar='[x] [y]', type=float, help='Filter out bridge reads that have >= [x] poor-quality bases. [y] is the minimum quality. Qualities range from 33-126 lowest to highest quality respectively. Default is: 0 35', default=[0,35], nargs=2)
+# BEGIN BUGFIX 1D
+#parser.add_argument('--max_poor_bases_in_bridge_read', metavar='[x] [y]', type=float, help='Filter out bridge reads that have >= [x] poor-quality bases. [y] is the minimum quality. Qualities range from 33-126 lowest to highest quality respectively. Default is: 0 35', default=[0,35], nargs=2)
+parser.add_argument('--max_poor_bases_in_bridge_read', metavar='[x] [y]', type=float, help='Filter out bridge reads that have >= [x]% poor-quality bases. Any bases with quality <= [y] will be considered poor-quality. Qualities range from 33-126 lowest to highest quality respectively. Default is: 30 35', default=[30,35], nargs=2)
+# END BUGFIX 1D
 parser.add_argument('--min_bridge_size', help='Minimum size of bridge. Default is 1.', type=int, default=1)
-parser.add_argument('--max_dist', help='The maximum distance that a putative cleavage site may be from an annotated end. Default is 5000', default=5000)
+parser.add_argument('--max_dist', type=int, help='The maximum distance that a putative cleavage site may be from an annotated end. Default is 100', default=100)
 parser.add_argument('-k', '--track', metavar=('[name]','[description]'), help='Name and description of BED graph track to output.', nargs=2)
 parser.add_argument('--rgb', help='RGB value of BED graph. Default is 0,0,255', default='0,0,255')
 parser.add_argument('-c', help='Specify a contig/s to look at.', nargs='+')
 parser.add_argument('--link', action='store_true', help='Enable searching for cleavage site link evidence. This will substantially increase runtime.')
-parser.add_argument('--no_extend', action='store_false', help='Disable the feature which searches beyond the scope of the contig for cleavage site evidence.')
+parser.add_argument('--no-extend', action='store_false', help='Disable the feature which searches beyond the scope of the contig for cleavage site evidence.')
 parser.add_argument('-limit', type=int, help='Limit the number of contigs to look at')
 parser.add_argument('--debug', action='store_true', help='Print debug statements.')
+parser.add_argument('--disable_blat', action='store_true', help='Do not run blat alignments')
+parser.add_argument("-l", "--log", dest="logLevel", default='WARNING', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], help='Set the logging level. Default = "WARNING"')
 
 args = parser.parse_args()
-#logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('polyA_logger')
 
-#fh = logging.FileHandler('info.log')
-#fh.setLevel(logging.INFO)
-#logger.addHandler(fh)
+log = logging.getLogger('polyA_logger')
+log.setLevel(getattr(logging, args.logLevel))
+fh = logging.FileHandler('kleat_all_fixes_debug.log', mode='w')
+fh.setLevel(logging.DEBUG)
+log.addHandler(fh)
 
 # Reference genome sequence (refseq)
-logger.debug("Loading reference genome via pysam 0.8.1")
 refseq = pysam.FastaFile(args.ref_genome)
-logger.debug("Reference genome successfully loaded!")
 
 # Contigs to genome alignments (aligns)
-logger.debug("Checking contig to genome alignment is in BAM format. Splitting file by '.': %s", args.c2g.split('.'))
 if (args.c2g.split('.')[-1].lower() == 'bam'):
-    logger.debug("Contig to genome alignment file is in BAM format, loading BAM file...")
     aligns = pysam.AlignmentFile(args.c2g, "rb")
-    logger.debug("Contig to genome alignment file loaded successfully")
 elif (args.c2g.split('.')[-1].lower() == 'sam'):
     aligns = pysam.AlignmentFile(args.c2g, "r")
 else:
@@ -92,7 +91,7 @@ for c in f:
         current['tend'] = c.end
     if (c.feature == 'CDS') and (not current['cstart']):
         current['cstart'] = c.start
-    elif (c.feature == 'CDS'):
+    if (c.feature == 'CDS'):
         current['cend'] = c.end
     if (c.feature == 'start_codon'):
         current['start_codon'] = current['i']
@@ -135,7 +134,7 @@ if args.trim_reads:
         if poor_qual is not None:
             poor_quals += poor_qual
 
-output_fields=['gene','transcript','transcript_strand','coding','contig','chromosome','cleavage_site','within_UTR','distance_from_annotated_site','ESTs','length_of_tail_in_contig','number_of_tail_reads','number_of_bridge_reads','max_bridge_read_tail_length','bridge_read_identities','tail+bridge_reads','number_of_link_pairs','max_link_pair_length','link_pair_identities','hexamer_loc+id','3UTR_start_end']
+output_fields=['gene','transcript','transcript_strand','coding','contig','chromosome','cleavage_site','within_UTR','distance_from_annotated_site','ESTs','length_of_tail_in_contig','number_of_tail_reads','number_of_bridge_reads','max_bridge_read_tail_length','bridge_read_identities','tail+bridge_reads','number_of_link_pairs','max_link_pair_length','link_pair_identities','hexamer_loc+id','3UTR_start_end','flag']
 if args.c:
     args.out += '.'+('_').join(args.c)
 prefix = os.path.splitext(args.out)[0]
@@ -293,7 +292,7 @@ def group_and_filter(lines_result, out_file, filters=None, make_track=None, rgb=
             else:
                 result = results[0]
             if (result[10] != '-') and (result[12] != '-') and (result[16] != '-'):
-                if (int(result[10]) == 0) and (int(result[12]) == 0) and (int(result[16]) == 0):
+                if (int(result[10]) == 0) and (int(result[12]) == 0) and (int(result[16]) == 0) and (int(result[21]) != 2):
                     continue
             
             if ('-' not in [result[12],result[13]]):
@@ -880,14 +879,41 @@ def annotate_cleavage_site(a, cleavage_site, clipped_pos, base, fd, min_txt_matc
     txt_strand = None
     
     # determine which transcript strand can the cleavage site come from
-    if not a['align'].is_reverse:
-        if (base == 'A' and clipped_pos == 'end') or (base == 'T' and clipped_pos == 'start'):
-            txt_strand = '+'
-    elif a['align'].is_reverse:
-        if (base == 'A' and clipped_pos == 'start') or (base == 'T' and clipped_pos == 'end'):
+    # BEGIN HOTFIX 1A
+    if a['align'].is_reverse:
+        complement = {'T': 'A', 'C': 'G', 'G': 'C', 'A': 'T'}
+        base = complement[base]
+    if (base == 'A') and (clipped_pos == 'end'):
+        if a['align'].is_reverse:
             txt_strand = '-'
-    if not txt_strand or (txt_strand == '+' and base == 'T') or (txt_strand == '-' and base == 'A'):
+        else:
+            txt_strand = '+'
+    if (base == 'T') and (clipped_pos == 'start'):
+        if a['align'].is_reverse:
+            txt_strand = '+'
+        else:
+            txt_strand = '-'
+
+    # DEBUG STATEMENTS
+    log.debug('contig: {}'.format(a['align'].qname))
+    log.debug('contig reversed: {}'.format(a['align'].is_reverse))
+    log.debug('base: {}'.format(base))
+    log.debug('clipped_pos: {}'.format(clipped_pos))
+    log.debug('a[\'tids\'] strands: {}'.format([[tid,fd[chrom][tid]['strand']] for tid in a['tids']]))
+    log.debug('cleavage_site: {}'.format(cleavage_site))
+    log.debug('txt_strand: {}'.format(txt_strand))
+    
+    if not txt_strand:
         return result
+#    if not a['align'].is_reverse:
+#        if (base == 'A' and clipped_pos == 'end') or (base == 'T' and clipped_pos == 'start'):
+#            txt_strand = '+'
+#    elif a['align'].is_reverse:
+#        if (base == 'A' and clipped_pos == 'start') or (base == 'T' and clipped_pos == 'end'):
+#            txt_strand = '-'
+#    if not txt_strand or (txt_strand == '+' and base == 'T') or (txt_strand == '-' and base == 'A'):
+#        return result
+    # END HOTFIX 1A
     else:
         ests = []
         
@@ -965,12 +991,18 @@ def find_polyA_cleavage(a,gf,fd):
 
     tail = find_bridge_reads(a, gf['min_at'], gf['max_diff'], gf, tail=find_tail_contig(a, gf['min_at'], gf['max_diff']))
     results = []
-    #print 'tail: {}'.format(tail)
+    log.debug('*'*20)
+    log.debug('tail: {}'.format(tail))
     for clipped_pos in tail.keys():
         for event in tail[clipped_pos]:
             # contig coordinate of cleavage site                
             last_matched, cleavage_site, base, tail_seq, num_tail_reads, bridge_reads, bridge_clipped_seq = event
+            log.debug(event)
             result = annotate_cleavage_site(a, cleavage_site, clipped_pos, base, fd)
+            log.debug('result: {}'.format(result))
+            if bridge_reads:
+                for read in bridge_reads:
+                    log.debug('{} is reversed: {}'.format(read.qname, read.is_reverse))
             if result:
                 if bridge_reads:
                     result['num_bridge_reads'] = len(bridge_reads)
@@ -1064,6 +1096,7 @@ def merge_clipped_reads(clipped_reads, extended_clipped_reads):
 #    return None
 
 def find_bridge_reads(a, min_len, mismatch, gf, genome_buffer=1000, tail=None):
+    log.debug('Attempting to find bridge reads...')
     #print "Running find_bridge_reads"
     """Finds bridge reads
     
@@ -1080,8 +1113,10 @@ def find_bridge_reads(a, min_len, mismatch, gf, genome_buffer=1000, tail=None):
     second_round = {'start':[], 'end':[]}
     #for read in self.bam.bam.fetch(align.query):
     for read in r2c.fetch(a['align'].query_name):
+        #log.debug('Looking at read: {}'.format(read.qname))
 #        print 'read: {}'.format(read.qname)
         if not read.cigar or len(read.cigar) != 2:
+            log.debug('{} has no read.cigar or len(read.cigar) != 2. {}'.format(read.qname, read.cigar))
             continue
         if (read.cigar[0][0] == 4 or read.cigar[0][0] == 5) or\
            (read.cigar[-1][0] == 4 or read.cigar[-1][0] == 5):
@@ -1108,11 +1143,17 @@ def find_bridge_reads(a, min_len, mismatch, gf, genome_buffer=1000, tail=None):
             #print 'read:\n{}\n{}'.format(read.qname,read.qual)
             # Experimental feature
             mpb = args.max_poor_bases_in_bridge_read
-            cutoff = mpb[0]*mpb[1]
+            #cutoff = mpb[0]*mpb[1]
             #print 'sum: {}'.format(sum([ord(x) for x in read.qual if ord(x) <= mpb[1]]))
             #print 'cutoff: {}'.format(cutoff)
-            if sum([ord(x) for x in read.qual if ord(x) <= mpb[1]]) > cutoff:
+            #if sum([ord(x) for x in read.qual if ord(x) <= mpb[1]]) > cutoff:
+            # BEGIN BUGFIX 1D
+            poor_qual_bases = [ord(x) for x in read.qual if ord(x) <= mpb[1]]
+            len_poor_qual_bases = len(poor_qual_bases)
+            if (((len_poor_qual_bases / len(read.qual)) * 100) >= mpb[0]):
                 continue
+                log.debug('Read is too low quality')
+            # END BUGFIX 1D
             # if last_match is beyond the limit of the alignment, adjust last_matched
             if last_matched < query_bounds[0] or last_matched > query_bounds[1]:
                 if last_matched < query_bounds[0]:
@@ -1137,8 +1178,10 @@ def find_bridge_reads(a, min_len, mismatch, gf, genome_buffer=1000, tail=None):
                 
             #print '{}\t{}\t{}\t{}'.format(read.qname,read.cigar,read.seq,read.is_reverse)
             if len(clipped_seq) < 1:
+                log.debug('clipped seq <1')
                 continue
             if (len(clipped_seq) < global_filters['min_bridge_size']):
+                log.debug('len clipped seq ({}) < min bridge size ({})'.format(len(clipped_seq), global_filters['min_bridge_size']))
                 continue
             
             # reverse complement to be in agreement with reference instead of contig
@@ -1171,6 +1214,7 @@ def find_bridge_reads(a, min_len, mismatch, gf, genome_buffer=1000, tail=None):
                     potential_bridges.write('>{}\n{}\n'.format(read.qname,read.seq))#read_name,read_objs[read_name].seq))
                     
             if not picked:
+                log.debug('Read may be extended')
                 extended.write('>{}\n{}\n'.format(read.qname,read.seq))
 #                if cleavage_site not in gf['PEBRs']:
 #                    gf['PEBRs'][cleavage_site] = [read.qname]
@@ -1270,7 +1314,7 @@ def in_homopolymer_neighbor(chrom, pos, tail, base):
     length = max(min_len, 2 * len(tail))
     try:
         neighbor_seq = refseq.fetch(chrom, pos-length, pos+length)
-    except IndexError:
+    except (ValueError,IndexError) as e:
         return False
     #neighbor_seq = self.refseq.GetSequence(chrom, pos-length, pos+length)
     homo = ''
@@ -1330,6 +1374,12 @@ def find_tail_contig(a, min_len, mismatch):
             #if a['strand'] == '-':
             if a['align'].is_reverse:
                 clipped_seq_genome = revComp(clipped_seq)
+                # BEGIN HOTFIX 1A
+#                if clipped_pos == 'start':
+#                    clipped_pos = 'end'
+#                else:
+#                    clipped_pos = 'start'
+                # END HOTFIX 1A
             
             matched_transcript = in_homopolymer = False
             for base in ('A', 'T'):
@@ -1477,10 +1527,17 @@ def get_blat_aln(aln_file):
             block_count = cols[17]
             tstart,tend = cols[15],cols[16]
             score = calcScore(cols[0],cols[1],cols[4],cols[6])
+            # BEGIN BUGFIX 1C
+            block_sizes = filter(None, cols[18].split(','))
+            tstarts = filter(None, cols[20].split(','))
             if query not in result:
-                result[query] = [[int(qsize),int(qstart),int(qend),target,int(block_count),score,int(tstart),int(tend)]]
-            else:
-                result[query].append([int(qsize),int(qstart),int(qend),target,int(block_count),score,int(tstart),int(tend)])
+                result[query] = []
+            result[query].append([int(qsize),int(qstart),int(qend),target,int(block_count),score,int(tstart),int(tend),block_sizes, tstarts])
+#            if query not in result:
+#                result[query] = [[int(qsize),int(qstart),int(qend),target,int(block_count),score,int(tstart),int(tend)]]
+#            else:
+#                result[query].append([int(qsize),int(qstart),int(qend),target,int(block_count),score,int(tstart),int(tend)])
+            # END BUGFIX 1C
     return result
 
 def get_full_blat_aln(aln_file):
@@ -1630,6 +1687,7 @@ def output_result(result, output_fields, fd, link_pairs=[]):
 #    else:
 #        data['transcript'] = result['txt']['transcript_id']
 #        data['transcript_strand'] = result['txt']['strand']
+    data['flag'] = result['flag']
     data['transcript'] = result['txt']
     data['transcript_strand'] = fd[result['a']['target']][result['txt']]['feats'][0].strand
     data['gene'] = fd[result['a']['target']][result['txt']]['feats'][0].asDict()['gene_id']
@@ -1658,7 +1716,7 @@ def output_result(result, output_fields, fd, link_pairs=[]):
             data['length_of_tail_in_contig'] = len(result['tail_seq'])
             data['number_of_tail_reads'] = result['num_tail_reads']
     else:
-        data['length_of_tail_in_contig'] = data['number_of_tail_reads'] = '-'
+        data['length_of_tail_in_contig'] = data['number_of_tail_reads'] = 0
         
     if ('bridge_reads' in result) and (result['bridge_reads']):
         data['number_of_bridge_reads'] = len(result['bridge_reads'])
@@ -1748,7 +1806,7 @@ def findGenomicPas(chrom,coord,window=50):
         results = [sorted(results, key=lambda(x):x[1])[0]]
     return results
 
-def findBindingSites(a, cleavage_site, strand, refseq, window=50):
+def findBindingSites(a, cleavage_site, strand, refseq, window = 50):
     binding_sites = {'AATAAA':1,'ATTAAA':2,'AGTAAA':3,'TATAAA':4,
                      'CATAAA':5,'GATAAA':6,'AATATA':7,'AATACA':8,
                      'AATAGA':9,'AAAAAG':10,'ACTAAA':11,'AAGAAA':12,
@@ -1756,7 +1814,7 @@ def findBindingSites(a, cleavage_site, strand, refseq, window=50):
     results = []
     if strand == '+':
         try:
-            seq = refseq.fetch(a['target'],cleavage_site-window,cleavage_site)
+            seq = refseq.fetch(a['target'],cleavage_site-window, cleavage_site)
         except (ValueError, IndexError) as e:
             return []
         for i in xrange(len(seq)):
@@ -1838,6 +1896,7 @@ for align in aligns:
         if align.query_name not in args.c:
             continue
     sys.stdout.write('{}-{}-{}{}\r'.format(align.qname,align.reference_start, align.reference_end,'*'*10))
+    log.debug('Contig: {}'.format(align.qname))
     #print '{}\t{}\t{}'.format(align.qname,align.reference_start, align.reference_end)
     # If the contig has no start or no end coordinate, we can't
     # do any analysis on it, so we must skip it
@@ -1906,11 +1965,13 @@ for align in aligns:
             has_utr3 = False
         if current['strand'] == '+':
             distance = abs(B - Y)
-            if distance <= 20:
+            log.debug('Distance: {} from {}'.format(distance, tid))
+            if distance <= args.max_dist:
                 fwd_distances.append([distance,has_utr3,tid])
         elif current['strand'] == '-':
             distance = abs(A - X)
-            if distance <= 20:
+            log.debug('Distance: {} from {}'.format(distance, tid))
+            if distance <= args.max_dist:
                 rev_distances.append([distance,has_utr3,tid])
     # If the tid list is empty, skip this contig
     if not a['tids']:
@@ -1925,6 +1986,7 @@ for align in aligns:
         if a['report_closest']:
             if fwd_distances and rev_distances:
                 if a['PAS']['end'] and a['PAS']['start']:
+                    log.debug('{} has PAS at start and end, do not report closest annotated site'.format(a['align'].qname))
                     a['report_closest'] = False
                 elif a['PAS']['end'] and not a['PAS']['start']:
                     rev_distances = []
@@ -1948,11 +2010,14 @@ for align in aligns:
                 closest = rev_closest
                 a['cleavage_site'] = align.reference_start + 1
                 a['inf_strand'] = '-'
+        log.debug('a: {}'.format(a))
+        log.debug('fwd_closest: {}'.format(fwd_closest))
+        log.debug('rev_closest: {}'.format(rev_closest))
         if (fwd_closest or rev_closest) and a['report_closest']:
             a['closest_tid'] = closest[2]
             a['min_dist'] = closest[0]
             cs = a['cleavage_site']
-            res = {'txt': a['closest_tid'], 'cleavage_site': cs, 
+            res = {'flag': 2, 'txt': a['closest_tid'], 'cleavage_site': cs, 
                    'within_utr': True, 'from_end': a['min_dist'], 
                    'ests': None, 'a': {'target': a['target'],
                    'utr3s': a['utr3s'],'qname': align.query_name}}
@@ -1963,13 +2028,14 @@ for align in aligns:
             contig_sites[align.query_name] = res
     if results:
         for result in results:
+            result['flag'] = 1
             if (result['clipped_pos'] == 'start'):
                 a['inf_strand'] = '-'
             else:
                 a['inf_strand'] = '+'
             # If there is already a cs close to the end, we don't need the implied one
             try:
-                #a['binding_sites'] = findBindingSites(a, result['cleavage_site'], a['inf_strand'])
+                #a['binding_sites'] = findBindingSites(a, result['cleavage_site'],a['inf_strand'])
                 a['binding_sites'] = findBindingSites(a, result['cleavage_site'], feature_dict[a['target']][result['txt']]['strand'], refseq)
             except TypeError:
                 a['binding_sites'] = None
@@ -1988,13 +2054,15 @@ print "Aligning bridge reads against genome..."
 potential_bridges = os.path.join(os.path.dirname(args.out),'.potential_bridges')
 blat_alignment = os.path.join(os.path.dirname(args.out),'.bridge_to_genome')
 #if not args.resume and not os.path.isfile(blat_alignment):
-task = subprocess.Popen(['blat', args.ref_genome, potential_bridges, blat_alignment], stdout=FNULL)
-task.communicate()
+if not args.disable_blat:
+    task = subprocess.Popen(['blat', args.ref_genome, potential_bridges, blat_alignment], stdout=FNULL)
+    task.communicate()
 print "Blat alignment complete"
 print "Aligning bridge reads against transcripts..."
 blat_alignment2 = os.path.join(os.path.dirname(args.out),'.bridge_to_transcripts')
-task = subprocess.Popen(['blat', args.out+'.transcript_seqs', potential_bridges, blat_alignment2], stdout=FNULL)
-task.communicate()
+if not args.disable_blat:
+    task = subprocess.Popen(['blat', args.out+'.transcript_seqs', potential_bridges, blat_alignment2], stdout=FNULL)
+    task.communicate()
 print "Blat alignment complete"
 #print 'blat_alignment: {}'.format(blat_alignment)
 #bend = [time.time(), time.strftime("%c")]
@@ -2018,6 +2086,13 @@ for result in all_results:#lines_result:
     target = result['a']['target']
     transcript = result['txt']
     cleavage_site = result['cleavage_site']
+    log.debug('target: {}'.format(target))
+    log.debug('transcript: {}'.format(transcript))
+    log.debug('cleavage_site: {}'.format(cleavage_site))
+    # BEGIN BUGFIX 1B
+    transcript_strand = feature_dict[target][transcript]['feats'][0].strand
+    # END BUGFIX 1B
+    log.debug('transcript_strand: {}'.format(transcript_strand))
     try:
         bridge_reads = result['bridge_reads']
         lengths = [len(x) for x in result['bridge_clipped_seq']]
@@ -2030,35 +2105,77 @@ for result in all_results:#lines_result:
             continue
         else:
             continue
-    #[int(qsize),int(qstart),int(qend),target,int(block_count),score,int(tstart),int(tend)]
+    # BEGIN BUGFIX 1C
+    # Below line is commented out
+    ##[int(qsize),int(qstart),int(qend),target,int(block_count),score,int(tstart),int(tend)]
+    # Use this info below instead
+    #[int(qsize), int(qstart), int(qend), target, int(block_count), score, int(tstart), int(tend), block_size, tstarts]
+    # END BUGFIX 1C
     for i,read in enumerate(bridge_reads):
         remove_read = False
-        maxlocal = maxnonlocal = None
+        # BEGIN BUGFIX 1E
+        maxlocal = maxnonlocal = 0
+        #maxlocal = maxnonlocal = None
+        # END BUGFIX 1E
         has_target_aln = False
         if read.qname not in blat_genome_results:
             continue
         #if read == '-':
         #    continue
+        log.debug('Looking at read {}'.format(read))
         #print 'Looking at read {}'.format(read)
         for x in blat_genome_results[read.qname]:
+            # BEGIN BUGFIX 1C
+            block_sizes = [int(bs) for bs in x[8]]
+            block_count = x[4]
+            tstarts = [int(ts) for ts in x[9]]
+            # END BUGFIX 1C
+            # BEGIN BUGFIX 1B
+            if (transcript_strand == '-'):
+                cs = int(x[6]) + 1
+            else:
+                cs = int(x[7])
+            # END BUGFIX 1B
+            log.debug('Looking at alignment {}'.format(x))
             #print '  Looking at alignment {}'.format(x)
             # If the alignment does not match the target and does
             # not align fully to the genome, then we don't care
-            if (x[3] != target) and ((x[1] != 0) or (x[0] != x[2]) or (x[4] != 1)):
+            # BEGIN BUGFIX 1C
+            #if (x[3] != target) and ((x[1] != 0) or (x[0] != x[2]) or (x[4] != 1)):
+            if (x[3] != target) and ((x[1] != 0) or (x[0] != x[2])):
                 continue
+            if (block_count > 1):
+                for index_tstart, tstart in enumerate(tstarts):
+                    potential_cleavage = tstart + block_sizes[index_tstart]
+                    if (transcript_strand == '-'):
+                        potential_cleavage = tstart + 1
+                    if potential_cleavage == cs:
+                        has_target_aln = True
+                        if (x[5] > maxlocal):
+                            maxlocal = x[5]
+            # END BUGFIX 1C
             # If none of the alignments match the cs target
             # then this read should be removed and noted
-            if (x[3] == target) and (x[7] == cleavage_site) and (x[5] > maxlocal):
+            # BEGIN BUGFIX 1B
+            #if (x[3] == target) and (x[7] == cleavage_site) and (x[5] > maxlocal):
+            if (x[3] == target) and (cs == cleavage_site):
                 has_target_aln = True
-                maxlocal = x[5]
+                if (x[5] > maxlocal):
+                    maxlocal = x[5]
+                #maxlocal = x[5]
+            # END BUGFIX 1B
+                log.debug('Has target alignment and maxlocal {}'.format(maxlocal))
             if (x[3] != target) and (x[5] > maxnonlocal):
                 maxnonlocal = x[5]
+                log.debug('Has nonlocal {}'.format(maxnonlocal))
         if (maxnonlocal > maxlocal) or not (has_target_aln):
+            log.debug('has_target_aln: {}. Skipping because no target or maxnonlocal > maxlocal'.format(has_target_aln))
             remove_read = True
         # Check transcript alignments
         if read.qname not in blat_transcript_results:
             continue
         elif any([((x[1] == 0) and (x[0] == x[2]) and (x[4] == 1)) for x in blat_transcript_results[read.qname]]):
+            log.debug('Removed because within transcript blat')
             remove_read = True
         if remove_read:
             bridge_reads.remove(read)
@@ -2084,7 +2201,9 @@ for result in all_results:#lines_result:
 #    lines_result += '\n'
 #print 'lines_result after adding keep: {}'.format(repr(lines_result))
 if contig_sites:
+    log.debug('Num contig sites: {}'.format(len(contig_sites)))
     contig_sites = filter_contig_sites(contig_sites)
+    log.debug('Num contig sites after filtering: {}'.format(len(contig_sites)))
 if contig_sites and lines_result:
     lines_result += '\n'
 for key in contig_sites:
@@ -2092,6 +2211,7 @@ for key in contig_sites:
     #print output_result(result['a'], result, output_fields, feature_dict, link_pairs=link_pairs)
     #raw_input('^'*20)
     temp = output_result(contig_sites[key], output_fields, feature_dict, link_pairs=link_pairs)
+    log.debug('temp: {}'.format(temp))
     lines_result += temp
     #file_lines_result.write(temp)
 #print 'final lines_result: {}'.format(repr(lines_result))

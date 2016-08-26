@@ -1,6 +1,3 @@
-
-__version__ = '2.5b'
-
 import time
 import random,string
 import copy
@@ -10,7 +7,8 @@ import os
 import sys
 import re
 import subprocess
-import shutil
+import itertools
+import cPickle
 # External modules below
 import pysam
 
@@ -28,6 +26,7 @@ parser.add_argument('-e', '--overlap_est', help='Overlap expressed sequence tags
 parser.add_argument('--min_at', help='Minimum number of a|t bases in tail. default is 4.', type=int, default=4)
 parser.add_argument('--max_diff', help='Maximum rate of x to y bases allowed in tail. where x are non a|t bases and y are a|t bases. default: 1 5.', nargs=2, default=[1,5])
 parser.add_argument('--max_diff_link', help='Maximum number of non A|T bases in entire link read. Default is 2.', type=int, default=2)
+parser.add_argument('-wr', '--write_results', action='store_false', help='Use this flag if you want to write each result out. Eventually will be used to resume if KLEAT crashes for some reason')
 # BEGIN BUGFIX 1D
 #parser.add_argument('--max_poor_bases_in_bridge_read', metavar='[x] [y]', type=float, help='Filter out bridge reads that have >= [x] poor-quality bases. [y] is the minimum quality. Qualities range from 33-126 lowest to highest quality respectively. Default is: 0 35', default=[0,35], nargs=2)
 parser.add_argument('--max_poor_bases_in_bridge_read', metavar='[x] [y]', type=float, help='Filter out bridge reads that have >= [x]% poor-quality bases. Any bases with quality <= [y] will be considered poor-quality. Qualities range from 33-126 lowest to highest quality respectively. Default is: 30 35', default=[30,35], nargs=2)
@@ -99,6 +98,7 @@ for c in f:
         current['stop_codon'] = current['i']
     current['i'] += 1
 
+#print feature_dict['chrX']['ENST00000361478']
 
 # Go through the feature_dict and try to determine 3utrs and 5utrs
 for chrom in feature_dict:
@@ -141,19 +141,18 @@ prefix = os.path.splitext(args.out)[0]
 basedir = os.path.dirname(args.out)
 if not os.path.exists(basedir):
     os.makedirs(basedir)
-#print basedir
-#print os.path.realpath(__file__)
-#shutil.copyfile(os.path.realpath(__file__),os.path.join(basedir,'KLEAT.py'))
-shutil.copy(os.path.realpath(__file__),basedir+'/KLEAT.py')
-#out_link_pairs = open(os.path.join(basedir,prefix+'-link.fa'), 'a')
 potential_bridges = open(os.path.join(basedir,'.potential_bridges'), 'w')
 extended = open(os.path.join(basedir,'.extended'), 'w')
+if args.write_results:
+    results_file = open(os.path.join(basedir,'.results'), 'wb')
 
 transcript_seqs = open(args.out+'.transcript_seqs','w')
 for chrom in feature_dict:
     for tid in feature_dict[chrom]:
         current = feature_dict[chrom][tid]
         transcript_seqs.write('>{}\n{}\n'.format(tid,current['seq']))
+        # Reduce memory overhead
+        current['seq'] = None
 transcript_seqs.close()
 
 # Filters (filters)
@@ -252,7 +251,7 @@ def group_and_filter(lines_result, out_file, filters=None, make_track=None, rgb=
         try:
             chrom, cleavage_site = cols[5], cols[6]
         except IndexError:
-            print 'Could not get cols[5], cols[6] from: "{}"'.format(cols)
+            log.debug('Could not get cols[5], cols[6] from: "{}"'.format(cols))
             continue
         if not groups.has_key(chrom):
             groups[chrom] = {}
@@ -573,26 +572,34 @@ def is_polyA_tail(seq, expected_base, min_len, max_nonAT_allowed):
     #print '{}\t{}\t{}\t{}'.format(seq,expected_base,min_len,max_nonAT_allowed)
     result = True
 
-    if seq is None or seq == '' or expected_base is None or not expected_base in seq:
+    log.debug('expected_base: {}'.format(expected_base))
+    log.debug('seq: {}'.format(seq))
+    if (seq is None) or (seq == '') or (expected_base is None) or (expected_base not in seq):
         return False
         
     # minimum number of As or Ts
     freq = check_freq(seq)
+    log.debug('freq: {}'.format(freq))
     #print freq
     if freq[expected_base] < min_len:
+        log.debug('freq expected base {} < min_len {}'.format(expected_base, min_len))
         return False
 
     if (max_nonAT_allowed[0] == 0):
         if (freq[expected_base] < len(seq)):
+            log.debug('frequency of expected base {} is < len seq {}'.format(expected_base, len(seq)))
             return False
         
     non_base = sum([freq[b] for b in freq if b != expected_base])
+    log.debug('non_base: {}'.format(non_base))
     if (non_base == 0):
+        log.debug('non_base == 0')
         return True
     ratio = float(freq[expected_base])/non_base
+    log.debug('ratio: {}'.format(ratio))
     #print 'ratio: {}'.format(ratio)
     #print 'max_nonAT: {}'.format(max_nonAT_allowed[1]/max_nonAT_allowed[0])
-    if (ratio < max_nonAT_allowed[1]/max_nonAT_allowed[0]):
+    if (ratio < float(max_nonAT_allowed[1])/max_nonAT_allowed[0]):
         return False
 #    for i in range(0, len(seq), max_nonAT_allowed[1]):
 #        subseq = seq[i:i+10]
@@ -774,6 +781,7 @@ def is_bridge_read_good(clipped_seq, base, min_len, mismatch):
     to determine whether it's acceptable
     """
     good = False
+    log.debug('is bridge read good clipped_seq: "{}" base: "{}"'.format(clipped_seq, base))
     if clipped_seq[0].upper() == base and len(re.sub(r'(.)\1+', r'\1', clipped_seq)) == 1:
         good = True
     elif is_polyA_tail(clipped_seq, base, min_len=min_len, max_nonAT_allowed=mismatch):
@@ -1064,6 +1072,7 @@ def find_extended_bridge_reads(a, reads_to_screen, min_len, mismatch, genome_buf
 
                 for base in ('A', 'T'):
                     if is_bridge_read_good(clipped_seq, base, min_len, mismatch):
+                        log.debug('{} is a good extended bridge read'.format(read_name))
                         #print 'possible extended bridge reads', align.query, read_objs[read_name].qname, read_objs[read_name].seq, is_seed, clipped_seq_genome
                         if not clipped_reads[clipped_pos].has_key(last_matched):
                             clipped_reads[clipped_pos][last_matched] = {}
@@ -1150,7 +1159,8 @@ def find_bridge_reads(a, min_len, mismatch, gf, genome_buffer=1000, tail=None):
             # BEGIN BUGFIX 1D
             poor_qual_bases = [ord(x) for x in read.qual if ord(x) <= mpb[1]]
             len_poor_qual_bases = len(poor_qual_bases)
-            if (((len_poor_qual_bases / len(read.qual)) * 100) >= mpb[0]):
+            # Needed to convert to float or else sometimes this would evalutate to 0
+            if (((float(len_poor_qual_bases) / len(read.qual)) * 100) >= mpb[0]):
                 continue
                 log.debug('Read is too low quality')
             # END BUGFIX 1D
@@ -1203,6 +1213,7 @@ def find_bridge_reads(a, min_len, mismatch, gf, genome_buffer=1000, tail=None):
                 #raw_input('*'*20)
                 #print '{}\t{}\t{}\t{}'.format(read.qname,base,clipped_pos,clipped_seq_genome)
                 if is_bridge_read_good(clipped_seq_genome, base, min_len, mismatch):
+                    log.debug('{} is a good bridge read'.format(read.query_name))
 #                    print 'below is good bridge_read'
 #                    print '{}\t{}\t{}\t{}'.format(read.qname,base,clipped_pos,clipped_seq_genome)
                     if not clipped_reads[clipped_pos].has_key(last_matched):
@@ -1214,7 +1225,7 @@ def find_bridge_reads(a, min_len, mismatch, gf, genome_buffer=1000, tail=None):
                     potential_bridges.write('>{}\n{}\n'.format(read.qname,read.seq))#read_name,read_objs[read_name].seq))
                     
             if not picked:
-                log.debug('Read may be extended')
+                log.debug('{} may be extended'.format(read.query_name))
                 extended.write('>{}\n{}\n'.format(read.qname,read.seq))
 #                if cleavage_site not in gf['PEBRs']:
 #                    gf['PEBRs'][cleavage_site] = [read.qname]
@@ -1256,6 +1267,7 @@ def find_bridge_reads(a, min_len, mismatch, gf, genome_buffer=1000, tail=None):
                 for read in clipped_reads[clipped_pos][pos][base]:
                     # Homopolymer neighbour check
                     if read[2] is not None and in_homopolymer_neighbor(a['target'], read[2], read[1], base):
+                        log.debug('{} is skipped because it is in homopolymer neighbour'.format(read[0].query_name))
                         skip = True
                         break
                         #del filtered[clipped_pos][pos][base]
@@ -1877,7 +1889,21 @@ if args.limit:
     count = 0
 #limit = 10000
 #count = 0
+
+def pickleLoad(filename):
+    with open(filename, "rb") as f:
+        while True:
+            try:
+                yield pickle.load(f)
+            except EOFError:
+                break
+
 all_results = []
+#if args.write_results:
+#    results_file = open(os.path.join(basedir,'.results'), 'r')
+#    for result in pickleLoad(results_file):
+#        all_results.append(result)
+print 'Looking at contig alignments ...'
 for align in aligns:
     if args.limit:
         if count >= limit:
@@ -1895,7 +1921,6 @@ for align in aligns:
     if args.c:
         if align.query_name not in args.c:
             continue
-    sys.stdout.write('{}-{}-{}{}\r'.format(align.qname,align.reference_start, align.reference_end,'*'*10))
     log.debug('Contig: {}'.format(align.qname))
     #print '{}\t{}\t{}'.format(align.qname,align.reference_start, align.reference_end)
     # If the contig has no start or no end coordinate, we can't
@@ -2040,6 +2065,15 @@ for align in aligns:
             except TypeError:
                 a['binding_sites'] = None
             result['a'] = {'target': a['target'], 'qname': align.query_name, 'binding_sites': a['binding_sites'], 'utr3s': a['utr3s']}
+
+#            if args.write_results:
+#                try:
+#                    temp_br = [read.query_name for read in results['bridge_reads']]
+#                    original_br = copy.deepcopy(results['bridge_reads'])
+#                    results['bridge_reads'] = temp_br
+#                except KeyError:
+#                    pass
+#                cPickle.dump(result, results_file)
             all_results.append(result)
             #lines_result += output_result(result, output_fields, feature_dict, link_pairs=link_pairs)
             #file_lines_result.write(output_result(result, output_fields, feature_dict, link_pairs=link_pairs))
@@ -2066,12 +2100,6 @@ if not args.disable_blat:
 print "Blat alignment complete"
 #print 'blat_alignment: {}'.format(blat_alignment)
 #bend = [time.time(), time.strftime("%c")]
-print 'getting genome blat results...'
-blat_genome_results = get_blat_aln(blat_alignment)
-print 'Done!'
-print 'getting transcript blat results...'
-blat_transcript_results = get_blat_aln(blat_alignment2)
-print 'Done!'
 #for read in blat_genome_results:
 #    print read
 #    print blat_genome_results[read]
@@ -2080,126 +2108,169 @@ print 'Done!'
 #lines_result = lines_result.splitlines()
 #keep = []
 #print 'lines_result before: {}'.format(lines_result)
-for result in all_results:#lines_result:
-    #print 'before:\n{}'.format(output_result(result, output_fields, feature_dict, link_pairs=link_pairs))
-    #result = result.split('\t')
-    target = result['a']['target']
-    transcript = result['txt']
-    cleavage_site = result['cleavage_site']
-    log.debug('target: {}'.format(target))
-    log.debug('transcript: {}'.format(transcript))
-    log.debug('cleavage_site: {}'.format(cleavage_site))
-    # BEGIN BUGFIX 1B
-    transcript_strand = feature_dict[target][transcript]['feats'][0].strand
-    # END BUGFIX 1B
-    log.debug('transcript_strand: {}'.format(transcript_strand))
+def genReadTargets(results, feature_dict):
+    targets = {}
+    for res in results:
+        try:
+            for br in res['bridge_reads']:
+                key = br.qname
+                targets[key] = [res['a']['target']]
+                targets[key].append(res['cleavage_site'])
+                targets[key].append(res['txt'])
+                targets[key].append(feature_dict[ res['a']['target'] ][ res['txt'] ]['strand'])
+        except KeyError:
+            pass
+    return targets
+
+def checkReadTranscript(read, lines, info):
+    remove = False
+    chrom, cleavage_site, transcript, transcript_strand = info
+    target = transcript
+    for idx, line in enumerate(lines):
+        try:
+            matches, misMatches, repMatches, nCount, qNumInsert, qBaseInsert, tNumInsert, tBaseInsert, strand, qName, qSize, qStart, qEnd, tName, tSize, tStart, tEnd, blockCount, blockSizes, qStarts, tStarts = line.strip().split('\t')
+        except IndexError:
+            log.debug('Could not parse line: {}'.format(line))
+            return remove
+        misMatches = int(misMatches)
+        qNumInsert = int(qNumInsert)
+        tNumInsert = int(tNumInsert)
+        blockSizes = [int(bs) for bs in filter(None, blockSizes.split(','))]
+        blockCount = int(blockCount)
+        tStarts = [int(ts) for ts in filter(None, tStarts.split(','))]
+        qSize = int(qSize)
+        qStart = int(qStart)
+        qEnd = int(qEnd)
+        tStart = int(tStart)
+        tEnd = int(tEnd)
+        cs = tEnd
+        if (transcript_strand == '-'):
+            cs = tStart + 1
+        score = calcScore(matches, misMatches, qNumInsert, tNumInsert)
+        if ( (qStart == 0) and (qSize == qEnd) and (blockCount == 1) and (misMatches == 0) and (qNumInsert == 0) and (tNumInsert == 0) ):
+            return True
+    return remove
+
+def checkRead(read, lines, info, window = 5):
+    remove = False
+    chrom, cleavage_site, transcript, transcript_strand = info
+    maxlocal = maxnonlocal = 0
+    has_target_aln = False
+    target = chrom
+#    if read == 'D0PY5ACXX120406:6:1314:19869:68493':
+#        print 'Number of alignments: {}'.format(len(lines))
+    for idx,line in enumerate(lines):
+        try:
+            matches, misMatches, repMatches, nCount, qNumInsert, qBaseInsert, tNumInsert, tBaseInsert, strand, qName, qSize, qStart, qEnd, tName, tSize, tStart, tEnd, blockCount, blockSizes, qStarts, tStarts = line.strip().split('\t')
+        except IndexError:
+            log.debug('Could not parse line: {}'.format(line))
+            return remove
+        misMatches = int(misMatches)
+        qNumInsert = int(qNumInsert)
+        tNumInsert = int(tNumInsert)
+        blockSizes = [int(bs) for bs in filter(None, blockSizes.split(','))]
+        blockCount = int(blockCount)
+        tStarts = [int(ts) for ts in filter(None, tStarts.split(','))]
+        qSize = int(qSize)
+        qStart = int(qStart)
+        qEnd = int(qEnd)
+        tStart = int(tStart)
+        tEnd = int(tEnd)
+        cs = tEnd
+        if (transcript_strand == '-'):
+            cs = tStart + 1
+        score = calcScore(matches, misMatches, qNumInsert, tNumInsert)
+        #[int(qsize), int(qstart), int(qend), target, int(block_count), score, int(tstart), int(tend), block_size, tstarts]
+#        if read == 'D0PY5ACXX120406:6:1314:19869:68493':
+#        print '*'*20
+#        print 'feature transcript_tstart: {}'.format(feature_dict[chrom][transcript]['tstart'])
+#        print 'feature transcript_tend: {}'.format(feature_dict[chrom][transcript]['tend'])
+#        print 'target: {}'.format(target)
+#        print 'tStart: {}'.format(tStart)
+#        print 'tEnd: {}'.format(tEnd)
+#        print 'qStart: {}'.format(qStart)
+#        print 'qSize: {}'.format(qSize)
+#        print 'qEnd: {}'.format(qEnd)
+#        print 'blockCount: {}'.format(blockCount)
+#        print 'cleavage_site: {}'.format(cleavage_site)
+#        print 'cs: {}'.format(cs)
+        # Don't bother checking past this if it is true
+        # If the alignment is off target but is not end-to-end aligned
+        if (tName != target) and ((qStart != 0) or (qSize != qEnd)):
+            continue
+        if ( (qStart == 0) and (qSize == qEnd) and (blockCount == 1) and (misMatches == 0) and (qNumInsert == 0) and (tNumInsert == 0) ):
+            log.debug('{} aligns perfectly with no gaps'.format(read))
+            log.debug('{}'.format(line.strip()))
+            return True
+        # If alignment is on target and matches cleavage site
+        if (tName == target) and ((cleavage_site - window) <= cs <= (cleavage_site + window)):
+            if ( (qStart == 0) and (qSize == qEnd) and (blockCount == 1) ):
+                log.debug('{} on target alignment aligns end to end'.format(line))
+                return True
+            has_target_aln = True
+            if (score > maxlocal):
+                maxlocal = score
+        # If there is a gapped alignment
+        if (blockCount > 1):
+            for index_tstart, tstart in enumerate(tStarts):
+                potential_cleavage = tstart + blockSizes[index_tstart]
+                if (transcript_strand == '-'):
+                    potential_cleavage = tstart + 1
+                if ((cleavage_site - window) <= potential_cleavage <= (cleavage_site + window)):
+                    has_target_aln = True
+                    if (score > maxlocal):
+                        maxlocal = score
+        if (tName != target) and (score > maxnonlocal):
+            maxnonlocal = score
+    log.debug('maxlocal: {}'.format(maxlocal))
+    log.debug('maxnonlocal: {}'.format(maxnonlocal))
+    if (maxnonlocal > maxlocal) or not (has_target_aln):
+        log.debug('has_target_aln: {}. Skipping {} because no target or maxnonlocal > maxlocal'.format(has_target_aln, read))
+        return True
+    return remove
+
+def parseBlat(psl, feature_dict, against_transcript=False, reads_to_remove={}):
+    with open(psl, 'r') as f:
+        for i in range(5):
+            f.readline()
+        for read, group in itertools.groupby(f, lambda x: x.strip().split('\t')[9]):
+            if read not in targets:
+                log.debug('{} not in targets'.format(read))
+                #reads_to_remove.add([read, targets[read][0]])
+                continue
+            log.debug('checkRead {}'.format(read))
+            if against_transcript:
+                remove = checkReadTranscript(read, list(group), targets[read])
+            else:
+                remove = checkRead(read, list(group), targets[read])
+            log.debug('remove: {}'.format(remove))
+            if remove:
+                if targets[read][1] not in reads_to_remove:
+                    reads_to_remove[targets[read][1]] = set()
+                reads_to_remove[targets[read][1]].add(read)
+    return reads_to_remove
+            
+targets = genReadTargets(all_results, feature_dict)
+reads_to_remove = parseBlat(blat_alignment, feature_dict)
+reads_to_remove = parseBlat(blat_alignment2, feature_dict, against_transcript=True, reads_to_remove=reads_to_remove)
+del(targets)
+
+for result in all_results:
+    has_tail = (result['tail_seq'] != None)
     try:
-        bridge_reads = result['bridge_reads']
+        result['bridge_reads'] = [x for x in result['bridge_reads'] if x.qname not in reads_to_remove[result['cleavage_site']]]
         lengths = [len(x) for x in result['bridge_clipped_seq']]
     except KeyError:
-        bridge_reads = lengths = None
-    has_tail = (result['tail_seq'] != None)
-    if (not bridge_reads): 
-        if (has_tail):
+        log.debug('Result: {}'.format(result))
+        log.debug('There are either no bridge reads, or perhaps the cleavage site is not in reads_to_remove')
+        if result['cleavage_site'] not in reads_to_remove:
+            log.debug('{} not in reads_to_remove'.format(result['cleavage_site']))
+        if 'bridge_reads' in result or has_tail:
             lines_result += output_result(result, output_fields, feature_dict, link_pairs=link_pairs)
             continue
         else:
             continue
-    # BEGIN BUGFIX 1C
-    # Below line is commented out
-    ##[int(qsize),int(qstart),int(qend),target,int(block_count),score,int(tstart),int(tend)]
-    # Use this info below instead
-    #[int(qsize), int(qstart), int(qend), target, int(block_count), score, int(tstart), int(tend), block_size, tstarts]
-    # END BUGFIX 1C
-    for i,read in enumerate(bridge_reads):
-        remove_read = False
-        # BEGIN BUGFIX 1E
-        maxlocal = maxnonlocal = 0
-        #maxlocal = maxnonlocal = None
-        # END BUGFIX 1E
-        has_target_aln = False
-        if read.qname not in blat_genome_results:
-            continue
-        #if read == '-':
-        #    continue
-        log.debug('Looking at read {}'.format(read))
-        #print 'Looking at read {}'.format(read)
-        for x in blat_genome_results[read.qname]:
-            # BEGIN BUGFIX 1C
-            block_sizes = [int(bs) for bs in x[8]]
-            block_count = x[4]
-            tstarts = [int(ts) for ts in x[9]]
-            # END BUGFIX 1C
-            # BEGIN BUGFIX 1B
-            if (transcript_strand == '-'):
-                cs = int(x[6]) + 1
-            else:
-                cs = int(x[7])
-            # END BUGFIX 1B
-            log.debug('Looking at alignment {}'.format(x))
-            #print '  Looking at alignment {}'.format(x)
-            # If the alignment does not match the target and does
-            # not align fully to the genome, then we don't care
-            # BEGIN BUGFIX 1C
-            #if (x[3] != target) and ((x[1] != 0) or (x[0] != x[2]) or (x[4] != 1)):
-            if (x[3] != target) and ((x[1] != 0) or (x[0] != x[2])):
-                continue
-            if (block_count > 1):
-                for index_tstart, tstart in enumerate(tstarts):
-                    potential_cleavage = tstart + block_sizes[index_tstart]
-                    if (transcript_strand == '-'):
-                        potential_cleavage = tstart + 1
-                    if potential_cleavage == cs:
-                        has_target_aln = True
-                        if (x[5] > maxlocal):
-                            maxlocal = x[5]
-            # END BUGFIX 1C
-            # If none of the alignments match the cs target
-            # then this read should be removed and noted
-            # BEGIN BUGFIX 1B
-            #if (x[3] == target) and (x[7] == cleavage_site) and (x[5] > maxlocal):
-            if (x[3] == target) and (cs == cleavage_site):
-                has_target_aln = True
-                if (x[5] > maxlocal):
-                    maxlocal = x[5]
-                #maxlocal = x[5]
-            # END BUGFIX 1B
-                log.debug('Has target alignment and maxlocal {}'.format(maxlocal))
-            if (x[3] != target) and (x[5] > maxnonlocal):
-                maxnonlocal = x[5]
-                log.debug('Has nonlocal {}'.format(maxnonlocal))
-        if (maxnonlocal > maxlocal) or not (has_target_aln):
-            log.debug('has_target_aln: {}. Skipping because no target or maxnonlocal > maxlocal'.format(has_target_aln))
-            remove_read = True
-        # Check transcript alignments
-        if read.qname not in blat_transcript_results:
-            continue
-        elif any([((x[1] == 0) and (x[0] == x[2]) and (x[4] == 1)) for x in blat_transcript_results[read.qname]]):
-            log.debug('Removed because within transcript blat')
-            remove_read = True
-        if remove_read:
-            bridge_reads.remove(read)
-            del lengths[i]
-            #result[13] = '-'
-            #result[15] = str(int(result[15]) - 1)
-    if not bridge_reads and not has_tail:
-        continue
-    #elif temp:# and temp != ['-']:
-    #    result[14] = (',').join(temp)
-    #    result[12] = str(len(temp))
-    #else:
-    #    result[14] = '-'
-    #    result[12] = '0'
-    #keep.append(('\t').join(result))
-    #keep.append(result)
     lines_result += output_result(result, output_fields, feature_dict, link_pairs=link_pairs)
-    #print 'after:\n{}'.format(lines_result)
-#print 'keep: {}'.format(repr(keep))
-#lines_result = ('\n').join(keep)
-#print 'lr before adding contig sites: {}'.format(lines_result)
-#if len(keep) == 1:
-#    lines_result += '\n'
-#print 'lines_result after adding keep: {}'.format(repr(lines_result))
 if contig_sites:
     log.debug('Num contig sites: {}'.format(len(contig_sites)))
     contig_sites = filter_contig_sites(contig_sites)
@@ -2207,13 +2278,7 @@ if contig_sites:
 if contig_sites and lines_result:
     lines_result += '\n'
 for key in contig_sites:
-#    print result
-    #print output_result(result['a'], result, output_fields, feature_dict, link_pairs=link_pairs)
-    #raw_input('^'*20)
     temp = output_result(contig_sites[key], output_fields, feature_dict, link_pairs=link_pairs)
     log.debug('temp: {}'.format(temp))
     lines_result += temp
-    #file_lines_result.write(temp)
-#print 'final lines_result: {}'.format(repr(lines_result))
-#file_lines_result.close()
 group_and_filter(lines_result, args.out+'.KLEAT', filters=global_filters, make_track=args.track, rgb=args.rgb)

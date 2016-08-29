@@ -100,6 +100,38 @@ def biobloomcategorizer(inputs, outputs):
     U.execute('gzip -c {output_fq2} > {output_fq2_gz}'.format(**locals()))
 
 
+@R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/align_reads2genome')
+@R.transform(biobloomcategorizer, R.formatter(), [
+    '{subpath[0][1]}/align_reads2genome/cba.sorted.bam',
+])
+def align_reads2genome(inputs, outputs):
+    inputs_fq_gz = ' '.join(inputs)
+    output_bam = outputs[0]
+    output_bam_prefix = re.sub('\.bam$', '', output_bam)
+    num_cpus = CONFIG['num_cpus']
+    cfg = CONFIG['steps']['align_reads2genome']
+    cfg.update(locals())
+    cmd = ('gsnap '
+           '--gunzip '
+           '--db hg19 '
+           '--dir {reference_genome_gmap_index} '
+           '--nthreads {num_cpus} '
+           '--format sam '
+           '--max-mismatches 10 '
+           '{inputs_fq_gz} '
+           '| samtools view -bhS - '
+           # for samtools-0.1
+           '| samtools sort - {output_bam_prefix}'.format(**cfg))
+    U.execute(cmd)
+
+
+@R.transform(align_reads2genome, R.suffix('.bam'), output='.bam.bai')
+def index_reads2genome(inputs, output):
+    input_bam = inputs[0]
+    cmd = 'samtools index {input_bam}'.format(**locals())
+    U.execute(cmd)
+
+
 @R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/transabyss')
 @R.transform(biobloomcategorizer, R.formatter(), [
     os.path.join(CONFIG['output_dir'], 'transabyss', 'merged.fa')

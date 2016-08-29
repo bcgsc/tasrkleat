@@ -21,6 +21,10 @@ def gen_config():
                 'bf_name': re.sub('\.bf$', '', os.path.basename(args.input_bf)),
             },
 
+            'align_reads2genome': {
+                'reference_genome_gmap_index': args.reference_genome_gmap_index
+            },
+
             'transabyss': {
                 'num_reads_cutoff': args.num_reads_too_small_cutoff,
                 'kmer_sizes': args.transabyss_kmer_sizes,

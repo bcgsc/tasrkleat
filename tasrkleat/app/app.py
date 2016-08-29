@@ -67,7 +67,7 @@ def extract_tarball(input_tarball, outputs):
                      bf_name=CONFIG['steps']['biobloomcategorizer']['bf_name'],
                      i=i,
                      ext=ext))
-    for ext in ['fq', 'fq.gz']
+    for ext in ['fq']
     for i in [1, 2]
 ])
 @U.timeit
@@ -109,7 +109,7 @@ def transabyss(inputs, outputs):
     """Run transabyss for three kmer sizes and transabyss-merge"""
     # better use absolute path because of -C option in abyss, which changes the
     # relative path.
-    input_fq1, input_fq2, _, _ = [os.path.abspath(_) for _ in inputs]
+    input_fq1, input_fq2 = [os.path.abspath(_) for _ in inputs]
     contigs_fa = outputs[0]
     cfg = CONFIG['steps']['transabyss']
     kmer_sizes = cfg['kmer_sizes']
@@ -230,7 +230,7 @@ def index_contigs_fa(inputs, outputs):
     '{subpath[0][1]}/align_reads2contigs/cba.sorted.bam',
 ])
 def align_reads2contigs(inputs, outputs):
-    input_fq1, input_fq2, _, _ = inputs
+    input_fq1, input_fq2 = inputs
     # the same as the output contigs.fa from abyss
     index = os.path.join(CONFIG['output_dir'], 'transabyss', 'merged.fa')
     output_bam = outputs[0]

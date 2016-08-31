@@ -74,7 +74,7 @@ def extract_tarball(input_tarball, outputs):
 def biobloomcategorizer(inputs, outputs):
     """categorize input reads with biobloomcategorizer"""
     input_fq1, input_fq2 = sorted(inputs)
-    output_fq1, output_fq2, output_fq1_gz, output_fq2_gz = outputs
+    output_fq1, output_fq2 = outputs
     output_dir = os.path.dirname(output_fq1)
     output_prefix = os.path.join(output_dir, 'cba')
     num_cpus = CONFIG['num_cpus']
@@ -94,10 +94,10 @@ def biobloomcategorizer(inputs, outputs):
            "--fq {input_fq1} {input_fq2}".format(**cfg))
     U.execute(cmd)
 
-    # if put gzip part in a new task, it's too cumbersome to compose the output
-    # file names as seen above
-    U.execute('gzip -c {output_fq1} > {output_fq1_gz}'.format(**locals()))
-    U.execute('gzip -c {output_fq2} > {output_fq2_gz}'.format(**locals()))
+    # # if put gzip part in a new task, it's too cumbersome to compose the output
+    # # file names as seen above
+    # U.execute('gzip -c {output_fq1} > {output_fq1_gz}'.format(**locals()))
+    # U.execute('gzip -c {output_fq2} > {output_fq2_gz}'.format(**locals()))
 
 
 @R.mkdir(biobloomcategorizer, R.formatter(), '{subpath[0][1]}/align_reads2genome')

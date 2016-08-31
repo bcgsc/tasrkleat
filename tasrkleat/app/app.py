@@ -25,13 +25,11 @@ logger.info('\n{0}'.format(pprint.pformat(CONFIG)))
          os.path.join(CONFIG['output_dir'], 'extract_tarball', 'cba_[12].fastq'))
 def extract_tarball(input_tarball, outputs):
     output_dir = os.path.join(CONFIG['output_dir'], 'extract_tarball')
-    if input_tarball.endswith('.tar.gz'):
-        cmd = 'tar zxfv {input_tarball} -C {output_dir}'.format(**locals())
-    elif input_tarball.endswith('.tar'):
-        cmd = 'tar  xfv {input_tarball} -C {output_dir}'.format(**locals())
-    else:
-        raise ValueError(
-            'unrecognized tarball format "{0}"'.format(input_tarball))
+    # z, the compression option is necessary for when you're reading from
+    # stdin, this simplifies the cmd construction and when launching the
+    # pipeline,
+    # https://www.reddit.com/r/linux4noobs/comments/3ay2hg/is_the_z_parameter_necessary_in_the_tar_command/
+    cmd = 'tar  xfv {input_tarball} -C {output_dir}'.format(**locals())
     U.execute(cmd)
 
     # list of extracted files

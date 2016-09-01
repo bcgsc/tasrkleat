@@ -211,7 +211,7 @@ if __name__ == '__main__':
         for k, line in enumerate(inf):
             if True:
                 tar = line.split('\t')[0]
-                size = int(float(line.split()[1]))
+                size = math.ceil(float(line.split()[1]))
                 length = int(line.split('\t')[2])
 
                 # factor of 20 is experiential 

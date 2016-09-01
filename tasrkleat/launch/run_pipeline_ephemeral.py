@@ -108,7 +108,9 @@ def create_pipeline_body(
 
         input_gs_tar,
         output_bucket,
-        transabyss_kmer_sizes):
+        transabyss_kmer_sizes,
+        disk_size):
+    """disk_size in GB"""
     id_path = gen_id_path(input_gs_tar)
     output_gsc_path = 'gs://{bucket}/{id_path}'.format(
         bucket=output_bucket, id_path=id_path)
@@ -141,7 +143,7 @@ def create_pipeline_body(
                         'name': 'datadisk',
                         'autoDelete': True,
                         'mountPoint': '/mnt/data',
-                        'sizeGb': 100,
+                        'sizeGb': disk_size,
                         'type': 'PERSISTENT_HDD',
                     }
                 ],
@@ -150,6 +152,8 @@ def create_pipeline_body(
                 'minimumCpuCores': 1,
                 #  Default: 3.75 (GB)
                 'minimumRamGb': 20,
+
+                'zones': 'us-central1-*'
             }
         },
 
@@ -198,11 +202,18 @@ if __name__ == '__main__':
     # with open('bi_gcs_objects.csv') as inf:
         # for k, line in enumerate(inf):
         #     if k >= 50 and k < 200:
-    with open('gsc_gcs_objects.csv') as inf:
+    # with open('gsc_gcs_objects.csv') as inf:
+        # for k, line in enumerate(inf):
+        #     if k >= 0 and k < 2:
+    with open('bi_gcs_objects.fix.csv') as inf:
         for k, line in enumerate(inf):
-            if k >= 0 and k < 2:
+            if True:
                 tar = line.split('\t')[0]
+                size = int(float(line.split()[1]))
                 length = int(line.split('\t')[2])
+
+                # factor of 20 is experiential 
+                disk_size = size * 1.5
 
                 if 45 <= length <= 50:
                     transabyss_kmer_sizes = [22, 32, 42]
@@ -218,7 +229,8 @@ if __name__ == '__main__':
                 body = create_pipeline_body(
                     PROJECT_ID, PIPELINE_NAME,
                     tar, OUTPUT_BUCKET,
-                    transabyss_kmer_sizes)
+                    transabyss_kmer_sizes,
+                    disk_size)
                 if DEBUG:
                     pprint.pprint(body)
 

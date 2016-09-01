@@ -152,7 +152,7 @@ def create_pipeline_body(
                 # 'preemptible': True,
                 'minimumCpuCores': 1,
                 #  Default: 3.75 (GB)
-                'minimumRamGb': 30,
+                'minimumRamGb': 20,
 
                 'zones': ["us-central1-a", "us-central1-b",
                           "us-central1-c", "us-central1-f",]

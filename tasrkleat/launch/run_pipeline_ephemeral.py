@@ -3,6 +3,7 @@
 import sys
 import os
 import re
+import math
 import pprint
 
 from oauth2client.client import GoogleCredentials
@@ -153,7 +154,8 @@ def create_pipeline_body(
                 #  Default: 3.75 (GB)
                 'minimumRamGb': 30,
 
-                'zones': 'us-central1-*'
+                'zones': ["us-central1-a", "us-central1-b",
+                          "us-central1-c", "us-central1-f",]
             }
         },
 

@@ -151,7 +151,7 @@ def create_pipeline_body(
                 # 'preemptible': True,
                 'minimumCpuCores': 1,
                 #  Default: 3.75 (GB)
-                'minimumRamGb': 20,
+                'minimumRamGb': 30,
 
                 'zones': 'us-central1-*'
             }
@@ -213,7 +213,7 @@ if __name__ == '__main__':
                 length = int(line.split('\t')[2])
 
                 # factor of 20 is experiential 
-                disk_size = size * 1.5
+                disk_size = size * 15
 
                 if 45 <= length <= 50:
                     transabyss_kmer_sizes = [22, 32, 42]

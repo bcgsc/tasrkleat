@@ -9,197 +9,136 @@ from oauth2client.client import GoogleCredentials
 from apiclient.discovery import build
 
 
-PIPELINE_ID = '11869245215301103929' # 2 vCPU, 2GB
-
-PROJECT_ID = 'isb-cgc-03-0006'
-SERVICE_ACCOUNT = '904618123662-compute@developer.gserviceaccount.com'
-
-# OUTPUT_BUCKET = 'zx-googl-genomics-test'
-OUTPUT_BUCKET = 'zx-trial'
-
-credentials = GoogleCredentials.get_application_default()
-service = build('genomics', 'v1alpha2', credentials=credentials)
-
-
 def gen_id_path(input_file):
     return re.sub(r'^gs\:\/\/(?P<bucket_name>[^/]+)\/', '', input_file)
 
 
-def create_pipeline_body(input_gs_tar):
+def gen_input_parameters():
+    res = []
+
+    for (name, path) in [
+        ('input.tar', 'input.tar'),
+        ('targets.bf', 'targets.bf'),
+        ('targets.txt', 'targets.txt'),
+        ('reference.fa', 'reference.fa'),
+        ('reference.fa.fai', 'reference.fa.fai'),
+        ('reference.gtf.gz', 'reference.gtf.gz'),
+        ('reference.gtf.gz.tbi', 'reference.gtf.gz.tbi'),
+
+        ('hg19.salcpchilddc', 'gmapdb/hg19.salcpchilddc'),
+        ('hg19.salcpguide1024', 'gmapdb/hg19.salcpguide1024'),
+        ('hg19.saindex64meta', 'gmapdb/hg19.saindex64meta'),
+        ('hg19.sachildexc', 'gmapdb/hg19.sachildexc'),
+        ('hg19.ref153offsets64strm', 'gmapdb/hg19.ref153offsets64strm'),
+        ('hg19.ref153offsets64meta', 'gmapdb/hg19.ref153offsets64meta'),
+        ('hg19.salcpexc', 'gmapdb/hg19.salcpexc'),
+        ('hg19.genomebits128', 'gmapdb/hg19.genomebits128'),
+        ('hg19.chromosome.iit', 'gmapdb/hg19.chromosome.iit'),
+        ('hg19.contig', 'gmapdb/hg19.contig'),
+        ('hg19.sarray', 'gmapdb/hg19.sarray'),
+        ('hg19.chrsubset', 'gmapdb/hg19.chrsubset'),
+        ('hg19.saindex64strm', 'gmapdb/hg19.saindex64strm'),
+        ('hg19.chromosome', 'gmapdb/hg19.chromosome'),
+        ('hg19.version', 'gmapdb/hg19.version'),
+        ('hg19.ref153positions', 'gmapdb/hg19.ref153positions'),
+        # empty dir
+        # ('hg19.maps', 'gmapdb/hg19.maps'),
+        ('hg19.sachildguide1024', 'gmapdb/hg19.sachildguide1024'),
+        ('hg19.genomecomp', 'gmapdb/hg19.genomecomp'),
+        ('hg19.contig.iit', 'gmapdb/hg19.contig.iit'),
+    ]:
+        res.append({
+            'name': name,
+            'localCopy': {
+                'path': path,
+                'disk': 'datadisk'
+            }
+        })
+
+    for name in [
+        'TRANSABYSS_KMER_SIZES', 'OUTPUT_GSC_PATH'
+    ]:
+        res.append({
+            # localCopy unset, would be passed as-is as environmental
+            # variable, so the name is capitalized
+            'name': name,
+        })
+    return res
+
+
+def gen_pipeline_args_inputs(
+        input_gs_tar, transabyss_kmer_sizes, output_gsc_path):
+    return {
+        'input.tar': input_gs_tar,
+        'targets.bf': 'gs://tasrkleat-static/targets.bf',
+        'targets.txt': 'gs://tasrkleat-static/targets.txt',
+        'reference.fa': 'gs://tasrkleat-static/hg19.fa',
+        'reference.fa.fai': 'gs://tasrkleat-static/hg19.fa.fai',
+        'reference.gtf.gz': 'gs://tasrkleat-static/ensembl.fixed.sorted.gz',
+        'reference.gtf.gz.tbi': 'gs://tasrkleat-static/ensembl.fixed.sorted.gz.tbi',
+
+        'hg19.chromosome': 'gs://tasrkleat-static/gmapdb/hg19.chromosome',
+        'hg19.chromosome.iit': 'gs://tasrkleat-static/gmapdb/hg19.chromosome.iit',
+        'hg19.chrsubset': 'gs://tasrkleat-static/gmapdb/hg19.chrsubset',
+        'hg19.contig': 'gs://tasrkleat-static/gmapdb/hg19.contig',
+        'hg19.contig.iit': 'gs://tasrkleat-static/gmapdb/hg19.contig.iit',
+        'hg19.genomebits128': 'gs://tasrkleat-static/gmapdb/hg19.genomebits128',
+        'hg19.genomecomp': 'gs://tasrkleat-static/gmapdb/hg19.genomecomp',
+        'hg19.ref153offsets64meta': 'gs://tasrkleat-static/gmapdb/hg19.ref153offsets64meta',
+        'hg19.ref153offsets64strm': 'gs://tasrkleat-static/gmapdb/hg19.ref153offsets64strm',
+        'hg19.ref153positions': 'gs://tasrkleat-static/gmapdb/hg19.ref153positions',
+        'hg19.sachildexc': 'gs://tasrkleat-static/gmapdb/hg19.sachildexc',
+        'hg19.sachildguide1024': 'gs://tasrkleat-static/gmapdb/hg19.sachildguide1024',
+        'hg19.saindex64meta': 'gs://tasrkleat-static/gmapdb/hg19.saindex64meta',
+        'hg19.saindex64strm': 'gs://tasrkleat-static/gmapdb/hg19.saindex64strm',
+        'hg19.salcpchilddc': 'gs://tasrkleat-static/gmapdb/hg19.salcpchilddc',
+        'hg19.salcpexc': 'gs://tasrkleat-static/gmapdb/hg19.salcpexc',
+        'hg19.salcpguide1024': 'gs://tasrkleat-static/gmapdb/hg19.salcpguide1024',
+        'hg19.sarray': 'gs://tasrkleat-static/gmapdb/hg19.sarray',
+        'hg19.version': 'gs://tasrkleat-static/gmapdb/hg19.version',
+
+        'TRANSABYSS_KMER_SIZES': ' '.join(map(str, transabyss_kmer_sizes)),
+        'OUTPUT_GSC_PATH': output_gsc_path,
+    }
+
+
+def create_pipeline_body(
+        project_id,
+        pipeline_name,
+
+        input_gs_tar,
+        output_bucket,
+        transabyss_kmer_sizes):
     id_path = gen_id_path(input_gs_tar)
-    output_gsc_path = 'gs://{bucket}/{id_path}'.format(bucket=OUTPUT_BUCKET,
-                                                       id_path=id_path)
+    output_gsc_path = 'gs://{bucket}/{id_path}'.format(
+        bucket=output_bucket, id_path=id_path)
     return {
         'ephemeralPipeline': {
-            'projectId': PROJECT_ID,
-            'name': 'tasrkleat',
+            'projectId': project_id,
+            'name': pipeline_name,
             'description': '',
             'docker': {
                 'cmd': (
-                    # 'app.py '
-                    # '--input-tar /mnt/data/input.tar '
-                    # '--input-bf /mnt/data/input.bf '
-                    # '--transabyss-kmer-sizes 22 32 '
-                    # '--reference-genome experiment/hg19/hg19.fa '
-                    # '--reference-genome-bwa-index experiment/hg19/bwa-index/hg19.fa '
-                    # '--gtf experiment/KLEAT-2.5.0/ensembl.fixed.sorted.gz '
-
                     'app.py '
                     '--input-tar /mnt/data/input.tar '
-                    '--input-bf /mnt/data/combined.bf '
+                    '--input-bf /mnt/data/targets.bf '
                     '--transabyss-kmer-sizes ${TRANSABYSS_KMER_SIZES} '
                     '--reference-genome /mnt/data/reference.fa '
-                    '--reference-genome-bwa-index /mnt/data/reference.fa '
                     '--gtf /mnt/data/reference.gtf.gz '
+                    '--reference-genome-gmap-index /mnt/data/gmapdb '
+                    '--output-gsc-path ${OUTPUT_GSC_PATH}'
                 ),
 
                 # 'imageName': 'us.gcr.io/{0}/bamqc'.format(PROJECT_ID),
                 'imageName': 'zyxue/test',
             },
 
-            'inputParameters': [
-                {
-                    'name': 'inputTar',
-                    'localCopy': {
-                        'path': 'input.tar',
-                        'disk': 'data'
-                    }
-                },
-
-                {
-                    'name': 'inputBf',
-                    'localCopy': {
-                        'path': 'combined.bf',
-                        'disk': 'data'
-                    }
-                },
-
-                {
-                    'name': 'inputBfTxt',
-                    'description': 'the .txt file that comes along with .bf',
-                    'localCopy': {
-                        'path': 'combined.txt',
-                        'disk': 'data'
-                    }
-                },
-
-
-                {
-                    # localCopy unset, would be passed as-is as environmental
-                    # variable, so the name is capitalized
-                    'name': 'TRANSABYSS_KMER_SIZES',
-                },
-
-                {
-                    'name': 'referenceGenome',
-                    'localCopy': {
-                        'path': 'reference.fa',
-                        'disk': 'data'
-                    }
-                },
-
-                {
-                    'name': 'referenceGenomeFai',
-                    'localCopy': {
-                        'path': 'reference.fa.fai',
-                        'disk': 'data'
-                    }
-                },
-
-                # BEGIN bwa index files
-                {
-                    'name': 'ReferenceGenomeBwaIndexAnn',
-                    'localCopy': {
-                        'path': 'reference.fa.ann',
-                        'disk': 'data'
-                    }
-                },
-
-
-                {
-                    'name': 'ReferenceGenomeBwaIndexBwt',
-                    'localCopy': {
-                        'path': 'reference.fa.bwt',
-                        'disk': 'data'
-                    }
-                },
-
-
-                {
-                    'name': 'ReferenceGenomeBwaIndexPac',
-                    'localCopy': {
-                        'path': 'reference.fa.pac',
-                        'disk': 'data'
-                    }
-                },
-
-
-                {
-                    'name': 'ReferenceGenomeBwaIndexSa',
-                    'localCopy': {
-                        'path': 'reference.fa.sa',
-                        'disk': 'data'
-                    }
-                },
-
-                {
-                    'name': 'ReferenceGenomeBwaIndexAmb',
-                    'localCopy': {
-                        'path': 'reference.fa.amb',
-                        'disk': 'data'
-                    }
-                },
-                # END bwa index files 
-
-                {
-                    'name': 'referenceGtfGz',
-                    'localCopy': {
-                        'path': 'reference.gtf.gz',
-                        'disk': 'data'
-                    }
-                },
-
-                {
-                    'name': 'referenceGtfGzTbi',
-                    'localCopy': {
-                        'path': 'reference.gtf.gz.tbi',
-                        'disk': 'data'
-                    }
-                },
-
-            ],
-
-            'outputParameters': [
-                {
-                    'name': 'transabyssOutput',
-                    'localCopy': {
-                        'path': 'tasrkleat-results/transabyss/*',
-                        'disk': 'data'
-                    },
-                },
-
-                {
-                    'name': 'kleatOutput',
-                    'localCopy': {
-                        'path': 'tasrkleat-results/kleat/*',
-                        'disk': 'data'
-                    },
-                },
-
-                {
-                    'name': 'logOutput',
-                    'localCopy': {
-                        'path': 'tasrkleat-results/tasrkleat.log',
-                        'disk': 'data'
-                    },
-                },
-
-            ],
+            'inputParameters': gen_input_parameters(),
 
             'resources': {
                 'disks': [
                     {
-                        'name': 'data',
+                        'name': 'datadisk',
                         'autoDelete': True,
                         'mountPoint': '/mnt/data',
                         'sizeGb': 100,
@@ -209,35 +148,17 @@ def create_pipeline_body(input_gs_tar):
 
                 # 'preemptible': True,
                 'minimumCpuCores': 1,
-                'minimumRamGb': 10, #  Defaults to 3.75 (GB)
+                #  Default: 3.75 (GB)
+                'minimumRamGb': 20,
             }
         },
 
         'pipelineArgs': {
-            'inputs': {
-                'inputTar': input_gs_tar,
-                'inputBf': 'gs://tasrkleat/static/combined.bf',
-                'inputBfTxt': 'gs://tasrkleat/static/combined.txt',
-                'TRANSABYSS_KMER_SIZES': '32',
-                'referenceGenome': 'gs://tasrkleat/static/hg19.fa',
-                'referenceGenomeFai': 'gs://tasrkleat/static/hg19.fa.fai',
-                'ReferenceGenomeBwaIndexAnn': 'gs://tasrkleat/static/bwa-index/hg19.fa.ann',
-                'ReferenceGenomeBwaIndexBwt': 'gs://tasrkleat/static/bwa-index/hg19.fa.bwt',
-                'ReferenceGenomeBwaIndexPac': 'gs://tasrkleat/static/bwa-index/hg19.fa.pac',
-                'ReferenceGenomeBwaIndexSa': 'gs://tasrkleat/static/bwa-index/hg19.fa.sa',
-                'ReferenceGenomeBwaIndexAmb': 'gs://tasrkleat/static/bwa-index/hg19.fa.amb',
-                'referenceGtfGz': 'gs://tasrkleat/static/ensembl.fixed.sorted.gz',
-                'referenceGtfGzTbi': 'gs://tasrkleat/static/ensembl.fixed.sorted.gz.tbi',
-            },
-
-            'outputs': {
-                'transabyssOutput': '{output_gsc_path}/transabyss/'.format(**locals()),
-                'kleatOutput': '{output_gsc_path}/kleat/'.format(**locals()),
-                'logOutput': '{output_gsc_path}/tasrkleat.log'.format(**locals()),
-            },
+            'inputs': gen_pipeline_args_inputs(
+                input_gs_tar, transabyss_kmer_sizes, output_gsc_path),
 
             'logging': {
-                'gcsPath': '{output_gsc_path}/logs'.format(**locals())
+                'gcsPath': '{0}/logs'.format(output_gsc_path)
             },
 
             'projectId': PROJECT_ID,
@@ -254,13 +175,56 @@ def create_pipeline_body(input_gs_tar):
         }
     }
 
+
 if __name__ == '__main__':
-    tar = sys.argv[1]
-    body = create_pipeline_body(tar)
-    # pprint.pprint(body)
-    resp = service.pipelines().run(body=body).execute()
-    pprint.pprint(resp)
-    operation_id = resp['name']
-    with open('operations.txt', 'at') as opf:
-        rec = '{0}\t{1}\n'.format(tar, operation_id)
-        opf.write(rec)
+
+    DEBUG = False
+
+    # global variables below usually don't need change
+    PIPELINE_NAME = 'tasrkleat'
+
+    # OUTPUT_BUCKET = 'zx-googl-genomics-test'
+    if DEBUG:
+        OUTPUT_BUCKET = 'zx-trial'
+    else:
+        OUTPUT_BUCKET = 'tasrkleat'
+
+    PROJECT_ID = 'isb-cgc-03-0006'
+    SERVICE_ACCOUNT = '904618123662-compute@developer.gserviceaccount.com'
+
+    credentials = GoogleCredentials.get_application_default()
+    service = build('genomics', 'v1alpha2', credentials=credentials)
+
+    # with open('bi_gcs_objects.csv') as inf:
+        # for k, line in enumerate(inf):
+        #     if k >= 50 and k < 200:
+    with open('gsc_gcs_objects.csv') as inf:
+        for k, line in enumerate(inf):
+            if k >= 0 and k < 2:
+                tar = line.split('\t')[0]
+                length = int(line.split('\t')[2])
+
+                if 45 <= length <= 50:
+                    transabyss_kmer_sizes = [22, 32, 42]
+                elif length in [75, 76]:
+                    transabyss_kmer_sizes = [32, 52, 72]
+                elif length == 100:
+                    transabyss_kmer_sizes = [32, 62, 92]
+                else:
+                    raise ValueError('unsure of transabyss kmer sizes for read length: {0}'.format(length))
+
+                print(tar, transabyss_kmer_sizes)
+
+                body = create_pipeline_body(
+                    PROJECT_ID, PIPELINE_NAME,
+                    tar, OUTPUT_BUCKET,
+                    transabyss_kmer_sizes)
+                if DEBUG:
+                    pprint.pprint(body)
+
+                resp = service.pipelines().run(body=body).execute()
+                pprint.pprint(resp)
+                operation_id = resp['name']
+                with open('operations.txt', 'at') as opf:
+                    rec = '{0}\t{1}\n'.format(tar, operation_id)
+                    opf.write(rec)

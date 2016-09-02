@@ -216,8 +216,9 @@ if __name__ == '__main__':
                 size = math.ceil(float(line.split()[1]))
                 length = int(line.split('\t')[2])
 
-                # factor of 20 is experiential 
-                disk_size = size * 15
+                # factor of 30 is experiential, additional 50GB for reference
+                # data, etc.
+                disk_size = size * 30 + 50
 
                 if 45 <= length <= 50:
                     transabyss_kmer_sizes = [22, 32, 42]

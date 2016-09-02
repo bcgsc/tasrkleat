@@ -5,9 +5,11 @@ import os
 import re
 import math
 import pprint
+import time
 
 from oauth2client.client import GoogleCredentials
 from apiclient.discovery import build
+import googleapiclient
 
 
 def gen_id_path(input_file):
@@ -236,9 +238,18 @@ if __name__ == '__main__':
                 if DEBUG:
                     pprint.pprint(body)
 
-                resp = service.pipelines().run(body=body).execute()
-                pprint.pprint(resp)
-                operation_id = resp['name']
-                with open('operations.txt', 'at') as opf:
-                    rec = '{0}\t{1}\n'.format(tar, operation_id)
-                    opf.write(rec)
+                while True:
+                    count = 0
+                    try:
+                        resp = service.pipelines().run(body=body).execute()
+                        pprint.pprint(resp)
+                        operation_id = resp['name']
+                        with open('operations.txt', 'at') as opf:
+                            rec = '{0}\t{1}\n'.format(tar, operation_id)
+                            opf.write(rec)
+                        break
+                    except googleapiclient.errors.HttpError as err:
+                        count += 1
+                        print('{0}th retry due to {0}'.format(count, err))
+
+                time.sleep(0.2)

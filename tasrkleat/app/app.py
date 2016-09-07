@@ -319,6 +319,8 @@ def cleanup(outdir):
     # otherwise it will return non-zero for being unable to delete . and ..
     U.execute('rm -rfv {0}/.[a-zA-Z]*'.format(
         os.path.join(outdir, 'kleat')))
+    U.execute('rm -rfv {0}/cba.transcript_seqs'.format(
+        os.path.join(outdir, 'kleat')))
 
 
 @R.follows(kleat)

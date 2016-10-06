@@ -156,8 +156,8 @@ def create_pipeline_body(
                 #  Default: 3.75 (GB)
                 'minimumRamGb': 20,
 
-                'zones': ["us-central1-a", "us-central1-b",
-                          "us-central1-c", "us-central1-f",]
+                # 'zones': ["us-central1-a", "us-central1-b",
+                #           "us-central1-c", "us-central1-f"]
             }
         },
 
@@ -206,10 +206,17 @@ if __name__ == '__main__':
     # with open('bi_gcs_objects.csv') as inf:
         # for k, line in enumerate(inf):
         #     if k >= 50 and k < 200:
+    # with open('bi_gcs_objects.fix.csv') as inf:
+    #     for k, line in enumerate(inf):
+    #         if True:
     # with open('gsc_gcs_objects.csv') as inf:
-        # for k, line in enumerate(inf):
-        #     if k >= 0 and k < 2:
-    with open('bi_gcs_objects.fix.csv') as inf:
+    #     for k, line in enumerate(inf):
+    #         if k >= 700 and k < 1400:
+    # with open('unc_gcs_objects.csv') as inf:
+    #     for k, line in enumerate(inf):
+    #         if k >= 7000 and k < 10000:
+
+    with open('missing_runs_gcs_objects.csv') as inf:
         for k, line in enumerate(inf):
             if True:
                 tar = line.split('\t')[0]

@@ -24,6 +24,16 @@ logger.info('\n{0}'.format(pprint.pformat(CONFIG)))
 @R.split(CONFIG['input_tar'],
          os.path.join(CONFIG['output_dir'], 'extract_tarball', 'cba_[12].fastq'))
 def extract_tarball(input_tarball, outputs):
+    """
+    An example sample with over 2 FASTQ files
+
+    CGHub_analysisID                      AliquotBarcode                fastqFilename           center   disease  disease_name  platform_full_name
+    05911238-a724-4748-896d-33f6a5f8438d  TCGA-AB-2889-03A-01T-0735-13  61HNFAAXX_3_1.fastq.gz  BCCAGSC  LAML     ACUTE         MYELOID             LEUKEMIA  Illumina  Genome  Analyzer  IIx
+    05911238-a724-4748-896d-33f6a5f8438d  TCGA-AB-2889-03A-01T-0735-13  61HNFAAXX_3_2.fastq.gz  BCCAGSC  LAML     ACUTE         MYELOID             LEUKEMIA  Illumina  Genome  Analyzer  IIx
+    05911238-a724-4748-896d-33f6a5f8438d  TCGA-AB-2889-03A-01T-0735-13  61LMEAAXX_3_1.fastq.gz  BCCAGSC  LAML     ACUTE         MYELOID             LEUKEMIA  Illumina  Genome  Analyzer  IIx
+    05911238-a724-4748-896d-33f6a5f8438d  TCGA-AB-2889-03A-01T-0735-13  61LMEAAXX_3_2.fastq.gz  BCCAGSC  LAML     ACUTE         MYELOID             LEUKEMIA  Illumina  Genome  Analyzer  IIx
+    """
+
     output_dir = os.path.join(CONFIG['output_dir'], 'extract_tarball')
     # z, the compression option is necessary for when you're reading from
     # stdin, this simplifies the cmd construction and when launching the

@@ -1,3 +1,19 @@
+# Usage
+
+There is only one script that matters for usage, `search_hexamer.py`, and it is
+designed to be used as a Python module.
+
+```
+import search_hexamer
+
+search_hexamer.search(*args, **kwargs)
+```
+
+See the
+[source code](https://github.com/bcgsc/tasrkleat/blob/master/hexamer_search/search_hexamer.py)
+for the API.
+
+
 # What does it do?
 
 Given an cleavage site, search for the existence of one of the following 16

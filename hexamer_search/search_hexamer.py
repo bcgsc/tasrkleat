@@ -90,6 +90,8 @@ def search(refseq, chrom, clv, strand, window=50):
     :param clv: 0-based. suppposed to be the 1-based coordinate of last base of
     3' UTR (e.g. output by KLEAT) - 1. converted to 0-based because pysam is
     0-based.
+
+    return: a tuple of (hexamer, hexamer id (indicates strength), 0-based hexamer location)
     """
     beg, end = gen_coords(clv, strand, window)
     seq = fetch_seq(refseq, chrom, beg, end)

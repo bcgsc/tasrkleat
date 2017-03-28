@@ -21,3 +21,10 @@ the strongest one will be selected.
 14. TTTAAA
 15. AAAACA
 16. GGGGCT
+
+The coordinate system used in this patch is 0-based because
+[`pysam`](https://github.com/pysam-developers/pysam) uses 0-based coordinates.
+
+Besides, FYI, personal experience tells that UCSC, IGV, GTF are 1-based. For the
+coordinate system used by more file formats, please see
+https://www.biostars.org/p/84686/.

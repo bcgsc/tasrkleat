@@ -1,9 +1,10 @@
 from Bio import Seq
-import pysam
-import unittest
 
 
-"""This script tries to find a hexamer in the reference genome upstream to a given cleavage site"""
+"""
+This script tries to find a hexamer in the reference genome upstream to a
+given cleavage site
+"""
 
 # numbers indicate their strengths, 1 is the strongest
 CANDIDATE_HEXAMERS = [
@@ -50,7 +51,9 @@ def gen_coords(clv, strand, window=50):
 
 
 def plus_search(seq, right_coord):
-    """right_coord should be clv_coord - 1 """
+    """
+    :param right_coord: the coordinate of the rightmost base in `seq`
+    """
     seq = seq.upper()
     left_coord = right_coord - len(seq) + 1
     for (hmr, hid) in CANDIDATE_HEXAMERS:
@@ -60,7 +63,9 @@ def plus_search(seq, right_coord):
 
 
 def minus_search(seq, left_coord):
-    """left_coord should be clv_coord + 1"""
+    """
+    :param left_coord: the coordinate of the leftmost base in `seq`
+    """
     seq = Seq.Seq(seq).reverse_complement().upper()
     for (hmr, hid) in CANDIDATE_HEXAMERS:
         idx = seq.rfind(hmr)
@@ -69,7 +74,7 @@ def minus_search(seq, left_coord):
 
 
 def search_hexamer(region, strand, beg, end):
-    """search for hexamer in the region"""
+    """search for PAS hexamer in the region"""
     if strand == '+':
         return plus_search(region, end)
     elif strand == '-':

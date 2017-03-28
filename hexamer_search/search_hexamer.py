@@ -35,7 +35,6 @@ def fetch_seq(refseq, chrom, beg, end):
 def gen_coords(clv, strand, window=50):
     """
     generate the coordinates to be used for fetching sequence
-    :param clv: 0-based
     """
     if strand == '+':
         beg = clv - window + 1
@@ -87,7 +86,10 @@ def search(refseq, chrom, clv, strand, window=50):
     """
     :param refseq: an object returned by pysam.FastaFile, see TestSearch for
     its usage
-    :param clv: 0-based
+
+    :param clv: 0-based. suppposed to be the 1-based coordinate of last base of
+    3' UTR (e.g. output by KLEAT) - 1. converted to 0-based because pysam is
+    0-based.
     """
     beg, end = gen_coords(clv, strand, window)
     seq = fetch_seq(refseq, chrom, beg, end)

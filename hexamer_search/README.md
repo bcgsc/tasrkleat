@@ -1,14 +1,15 @@
 # Usage
 
-There is only one script that matters for usage, `search_hexamer.py`, and it is
-designed to be used as a Python module.
+There is only one script that matters for usage,
+[`search_hexamer.py`](https://github.com/bcgsc/tasrkleat/blob/master/hexamer_search/search_hexamer.py),
+and it is designed to be used as a Python module.
 
-It required [Biopython](http://biopython.org/). If haven't had a virtual
-environment with it installed already, please use
-[Miniconda](https://conda.io/miniconda.html) or
+It requires [pysam](https://github.com/pysam-developers/pysam) and
+[Biopython](http://biopython.org/). If haven't had a virtual environment with
+them installed already, please use [Miniconda](https://conda.io/miniconda.html)
+or
 [pip](https://pypi.python.org/pypi/pip)+[virtualenv](https://pypi.python.org/pypi/virtualenv)
-to create one and install it. Then
-
+to create one and install the required packages. Then, copy over the script, and
 
 ```
 import search_hexamer

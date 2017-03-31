@@ -29,7 +29,7 @@ CANDIDATE_HEXAMERS = [
 
 def fetch_seq(refseq, chrom, beg, end):
     """.fetch seems to be (beg, end]"""
-    return refseq.fetch(chrom, beg, end)
+    return refseq.fetch(chrom, max(beg, 0), min(end, refseq.get_reference_length(chrom))):q
 
 
 def gen_coords(clv, strand, window=50):

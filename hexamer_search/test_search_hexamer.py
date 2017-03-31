@@ -56,13 +56,22 @@ class TestFetchSeq(unittest.TestCase):
     def setUp(self):
         self.refseq = pysam.FastaFile(REF_FA)
 
-    def test_fetch_seq_out_of_range(self):
+    def test_fetch_seq_bound_negative_coordinate_by_0(self):
         chrm = 'MT'
-        clv = 45
+        clv = 3
         beg, end = gen_coords(clv, '+', window=6)
-        self.assertEqual((beg, end), (clv - 6 + 1, clv + 1))
-        self.assertEqual(fetch_seq(self.refseq, chrm, beg, end), 'CTCCAT')
-        
+        calc_beg = -2            # clv - 6 + 1
+        calc_end = 4             # clv + 1
+        self.assertEqual((beg, end), (calc_beg, calc_end))
+        expected = 'GATC'         # the first 4 bases of hg19 in chr MT
+        self.assertEqual(fetch_seq(self.refseq, chrm, beg, end), expected)
+        # assert beginning is bound by 0
+        self.assertEqual(fetch_seq(self.refseq, chrm, 0,   end), expected)
+
+    def test_fetch_seq_bound_over_large_coordinate_by_chr_length(self):
+        # better have another test case for max chr length
+        pass
+
     def test_fetch_seq_based_on_KLEAT_clv_plus_strand_chr12_DRAM1(self):
         """based on hg19"""
         chrm = '12'

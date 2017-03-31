@@ -21,7 +21,7 @@ class TestSearchHexamer(unittest.TestCase):
         self.assertEqual(plus_search('GGGGCTAC', 20), ('GGGGCT', 16, 13))
         self.assertEqual(plus_search('GTTTATTC', 6), None)
 
-    def test_plus_search_lowercae(self):
+    def test_plus_search_lowercase(self):
         self.assertEqual(plus_search('GAATaaaC', 10), ('AATAAA', 1, 4))
 
     def test_plus_search_take_right_most_hexamer(self):
@@ -56,6 +56,13 @@ class TestFetchSeq(unittest.TestCase):
     def setUp(self):
         self.refseq = pysam.FastaFile(REF_FA)
 
+    def test_fetch_seq_out_of_range(self):
+        chrm = 'MT'
+        clv = 45
+        beg, end = gen_coords(clv, '+', window=6)
+        self.assertEqual((beg, end), (clv - 6 + 1, clv + 1))
+        self.assertEqual(fetch_seq(self.refseq, chrm, beg, end), 'CTCCAT')
+        
     def test_fetch_seq_based_on_KLEAT_clv_plus_strand_chr12_DRAM1(self):
         """based on hg19"""
         chrm = '12'

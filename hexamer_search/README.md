@@ -52,3 +52,12 @@ The coordinate system used in this patch is 0-based because
 Besides, FYI, personal experience tells that UCSC, IGV, GTF are 1-based. For the
 coordinate system used by more file formats, please see
 https://www.biostars.org/p/84686/.
+
+
+# Development
+
+To run tests
+
+```
+python test_search_hexamer.py
+```

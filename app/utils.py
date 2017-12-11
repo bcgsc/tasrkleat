@@ -83,7 +83,8 @@ def execute(cmd, flag_file=None, msg_id='', debug=False):
             msg = '{0}: {1}'.format(msg_id, msg)
 
         if returncode != 0:
-            logger.error(msg)
+            # logger.error(msg)
+            raise ValueError(msg)
         else:
             logger.info(msg)
             if flag_file is not None:
@@ -94,7 +95,9 @@ def execute(cmd, flag_file=None, msg_id='', debug=False):
                       'CMD: "{cmd}"'.format(**locals()))
         if msg_id:
             except_msg = '{0}: {1}'.format(msg_id, except_msg)
-        logger.exception(except_msg)
+        # logger.exception(except_msg)
+        logger.error(except_msg)
+        raise OSError(err)
 
 
 def ioselect(proc):

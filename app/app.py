@@ -324,8 +324,8 @@ def cleanup(outdir):
     U.execute('rm -rfv {0}'.format(
         os.path.join(outdir, 'extract_tarball')))
     # remove unecessary fq files
-    U.execute('rm -rfv {0}/*.fq'.format(
-        os.path.join(outdir, 'biobloomcategorizer')))
+    # U.execute('rm -rfv {0}/*.fq'.format(
+    #     os.path.join(outdir, 'biobloomcategorizer')))
     # remove huge hidden files in kleat. Use .[a-z][A-Z] instead of .* because
     # otherwise it will return non-zero for being unable to delete . and ..
     U.execute('rm -rfv {0}/.[a-zA-Z]*'.format(

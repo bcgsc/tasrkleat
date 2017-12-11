@@ -1,4 +1,4 @@
-FROM google/cloud-sdk
+FROM google/cloud-sdk:178.0.0
 MAINTAINER Zhuyi Xue <zxue.bcgsc@gmail.com>
 
 # Note: `linuxbrew` is not used in the Dockerfile because of the
@@ -37,6 +37,7 @@ RUN apt-get -yf install \
     python-setuptools \
     ssh \
     unzip \
+    wget \
     zlib1g-dev
 
 # RUN curl -OL "http://www.bcgsc.ca/platform/bioinfo/software/biobloomtools/releases/2.0.12/biobloomtools-2.0.12.tar.gz" \

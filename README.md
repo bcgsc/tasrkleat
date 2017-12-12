@@ -46,3 +46,17 @@ To see if the image has been built successfully
 ```
 docker images
 ```
+
+
+### Development
+
+1. Version every package installed if possible in the Dockerfile.
+2. Run `docker push zyxue/tasrkleat:<tag>` mannually to avoid accidental build for now.
+
+
+### Pre-built docker images
+
+Pre-built Docker images are available at
+https://hub.docker.com/r/zyxue/tasrkleat/tags/. Their tags should
+match those at the github repo, except for the *latest* tag, which
+reflects the built image from the master branch.

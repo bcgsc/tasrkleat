@@ -68,9 +68,8 @@ RUN curl -OL "https://github.com/bcgsc/abyss/releases/download/1.5.2/abyss-1.5.2
 
 # install transabyss
 RUN apt-get install -y libxml2-dev libpng12-dev
-RUN pip install python-igraph pysam biopython
+RUN pip install python-igraph==0.7.1.post6 pysam==0.9.1 biopython==1.67
 ENV MACHTYPE=x86_64
-ENV PATH=${HOME}/bin/${MACHTYPE}:${PATH}
 RUN curl -OL http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/blat/blat \
     && chmod u+x blat \
     && mv -v blat /usr/local/bin
@@ -97,18 +96,17 @@ ENV PATH=/bwa-0.7.12:${PATH}
 
     
 # install gmap-gsnap
-ENV PATH=${HOME}/local/gmap/bin:${PATH}
 RUN wget http://research-pub.gene.com/gmap/src/gmap-gsnap-2014-12-28.tar.gz  \
     && tar zxf gmap-gsnap-2014-12-28.tar.gz \
     && cd gmap-2014-12-28 \
-    && ./configure --prefix=${HOME}/local/gmap \
+    && ./configure --prefix=/usr/local \
     && make \
     && make install \
     && cd .. && rm -rf gmap-gsnap-2014-12-28.tar.gz gmap-2014-12-28
 
 
 ENV PROJECT_ID=tasrkleat
-ENV _PROJECT_DIR ${HOME}/local/${PROJECT_ID}
+ENV _PROJECT_DIR /usr/local/${PROJECT_ID}
 ENV PATH=${_PROJECT_DIR}:${PATH}
 RUN mkdir -p ${_PROJECT_DIR}
 ADD app/*.py ${_PROJECT_DIR}/

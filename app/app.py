@@ -120,7 +120,7 @@ def align_reads2genome(inputs, outputs):
     cfg = CONFIG['steps']['align_reads2genome']
     cfg.update(locals())
     cmd = ('gsnap '
-           '--novelsplicing=1'
+           '--novelsplicing=1 '
            '--gunzip '
            '--db hg19 '
            '--dir {reference_genome_gmap_index} '

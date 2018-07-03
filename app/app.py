@@ -121,6 +121,7 @@ def align_reads2genome(inputs, outputs):
     cfg.update(locals())
     cmd = ('gsnap '
            '--novelsplicing=1 '
+           '--batch 4 '
            '--gunzip '
            '--db hg19 '
            '--dir {reference_genome_gmap_index} '

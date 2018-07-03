@@ -1,5 +1,5 @@
 FROM google/cloud-sdk:178.0.0
-MAINTAINER Zhuyi Xue <zxue.bcgsc@gmail.com>
+MAINTAINER Zhuyi Xue <zxue@bcgsc.ca>
 
 # Note: `linuxbrew` is not used in the Dockerfile because of the
 # [uid-mapping problem](https://github.com/docker/docker/issues/7198) between

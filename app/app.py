@@ -337,6 +337,13 @@ def cleanup(outdir):
 
 @R.follows(kleat)
 def transfer():
+    """
+    Outputparameters (e.g.
+    https://github.com/googlegenomics/pipelines-api-examples/blob/67dde2a79605b75535eb87965523d8596f07545e/fastqc/cloud/run_fastqc.py#L163)
+    was not used because it doesn't support recursive copy, which would be very
+    inconvenient if every directory in the results needs worked out and listed
+    mannually
+    """
     cleanup(CONFIG['output_dir'])
 
     cfg = CONFIG['steps']['transfer']

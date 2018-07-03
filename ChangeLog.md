@@ -1,5 +1,9 @@
 # tasrkleat
 
+### Version v0.1.2 ###
+
+- added --batch 4 to gsnap to speed up read2genome alignment
+	
 ### Version v0.1.1 ###
 
 - Adjusted Gsnap arguments for better read2genome alignment (add --novelsplicing=1), for use of benchmarking DaPars

@@ -2,6 +2,9 @@
 
 ### Version v0.1.2 ###
 
+- removed transfer step, leave it to Google Genomics API. This step is creating
+  trouble somehow, see the description of the problem on [GGP
+  forum](https://groups.google.com/forum/#!topic/google-genomics-discuss/RQBscD6YSjk).
 - added --batch 4 to gsnap to speed up read2genome alignment
 	
 ### Version v0.1.1 ###

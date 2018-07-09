@@ -18,6 +18,17 @@ from the target _de novo_ assembly (Task 3).
 Currently, all three analysis will be conducted by default when running the
 pipeline. There is still no option implemented to disable any of them yet.
 
+### Citation
+
+Zhuyi Xue, Rene L. Warren, Ewan A. Gibb, Daniel MacMillan, Johnathan Wong, Readman Chiu, S. Austin Hammond, Chen Yang, Ka Ming Nip, Catherine A. Ennis, Abigail Hahn, Sheila Reynolds, Inanc Birol
+
+**Recurrent tumor-specific regulation of alternative polyadenylation of cancer-related genes**
+
+BMC Genomics (in publication)
+
+DOI : 10.1186/s12864-018-4903-7
+
+
 ### Running environment
 
 The pipeline is desigend mainly for the cloud computing environment, the [Google
@@ -146,6 +157,7 @@ sudo docker run --rm \
 The command is mostly the same to that in the interactive mode except for the
 parts that enable interaction (e.g. `-it` and `/bin/bash`) are removed. Now it
 runs `app.py` directly instead of `/bin/bash` when the container starts.
+
 
 ### Development
 

@@ -2,32 +2,34 @@
 
 ### What does it do
 
-The pipeline was designed with multiple usages in mind:
+The pipeline was designed with three types of analysis in mind:
 
-* Targeted read alignment for expression quantification of candidate genes, i.e. genes of interest
-* Targeted _de novo_ assembly of candidate genes
-* Targeted cleavage sites predictions in candidate genes
+1. *Targeted cleavage site prediction* in candidate genes, which is the main focus
+   of this pipeline
+1. *Targeted _de novo_ assembly* of candidate genes
+1. *Targeted read alignment* for expression quantification of candidate genes,
+   i.e. genes of interest
 
-The three are related in a way as they are all targeted studies of candidate
-genes only instead of all genes available in a given RNA-Seq dataset. Besides,
-targeted cleavage sites detection depends on the results from the target _de
-novo_ assembly.
+The commonality among the three is that as they are all targeted analysis of
+candidate genes instead of all genes available for a given RNA-Seq dataset. In
+addition, targeted cleavage sites prediction (Task 1) depends on the results
+from the target _de novo_ assembly (Task 3).
 
-However, currently, all three analysis will be conducted by default when running
-the pipeline. There is still no option implemented to disable any of them.
+Currently, all three analysis will be conducted by default when running the
+pipeline. There is still no option implemented to disable any of them yet.
 
 ### Running environment
 
-The pipeline was desigend mainly for the cloud computing environment, the
-[Google Cloud Platform](https://cloud.google.com/) (GCP) in particular, and to be
-used in the form of a Docker image. In principle, nothing prevents it from being
-used without Docker in a non-cloud environment. However, there are still
-GCP-specific commands (e.g.
-[`gsutil`](https://cloud.google.com/storage/docs/gsutil)) inside the pipeline,
-so it's **NOT** ready for usage outside of GCP yet.
+The pipeline is desigend mainly for the cloud computing environment, the [Google
+Cloud Platform](https://cloud.google.com/) (GCP) in particular, and to be used
+in the form of a Docker image. However, in principle, nothing prevents it from
+being used without Docker in a non-cloud environment.
 
-<!-- The user just needs to make sure all the dependencies are installed properly -->
-<!-- wherever it's used (See the included `Dockerfile` for dependencies). -->
+<!-- Maybe too advanced for general user, for advanced users, they will figure it out anyway -->
+
+<!-- If you intend to use it without docker, make sure you have all the dependencies -->
+<!-- installed properly. Please see the included `Dockerfile` for the needed -->
+<!-- dependencies. -->
 
 ### Install
 
@@ -49,10 +51,12 @@ docker images
 
 ### Pre-built docker images
 
-Pre-built Docker images are available at
-https://hub.docker.com/r/zyxue/tasrkleat/tags/. Their tags should
-match those at the github repo, except for the *latest* tag, which
-reflects the built image from the master branch.
+Pre-built Docker images are available at the
+[dockerhub](https://hub.docker.com/r/zyxue/tasrkleat/tags/). The tags should
+match those at the github repo, except for the *v0* tag, which is used for
+testing purpose exclusively, and the *latest* tag, which reflects the
+automatically built image from the master branch.
+
 
 ### Use docker image
 
@@ -63,12 +67,11 @@ Fetch an interactive Docker session
 
 ```
 # You may or may not need sudo depending on your user group setup
-sudo docker run \
-	-it \
-	--rm \
-	-v /path/to/reference:/mnt \
-	-v /path/to/reads-data/:/data zyxue/tasrkleat:latest \
-	/bin/bash
+sudo docker run -it --rm \
+    -v /path/to/reference:/mnt \
+    -v /path/to/reads-data/:/data \
+    zyxue/tasrkleat:latest \
+    /bin/bash
 ```
 
 `-it` means fetching an interactive pseudo-tty session. For details of
@@ -91,7 +94,7 @@ that you could interact with it.
 of those used in the manuscript can be found at
 http://bcgsc.ca/downloads/tasrkleat-static/on-cloud/.
 
-Now, you are inside a tasrkleat container as root. The environment looks like
+Once you are inside a tasrkleat container as root. The environment looks like
 
 ```
 root@b7aed8a3b50f:/# whoami
@@ -107,53 +110,44 @@ A example command to run the pipeline inside the container
 
 ```
 app.py \
-	--input-tar /data/data.tar \
-	--input-bf /mnt/targets.bf -k 32 52 72 \
-	--reference-genome /mnt/hg19.fa \
-	--reference-genome-gmap-index /mnt/gmapdb \
-	--gtf /mnt/ensembl.fixed.sorted.gz \
-	--output-gsc-path gs://tasrkleat-benchmark-kleat"
+    --input-tar /data/data.tar \
+    --input-bf /mnt/targets.bf \
+    --transabyss-kmer-sizes 32 52 72 \
+    --reference-genome /mnt/hg19.fa \
+    --reference-genome-gmap-index /mnt/gmapdb \
+    --gtf /mnt/ensembl.fixed.sorted.gz
 ```
 
-`--input-bf` accepts the pre-built input bloomfilters. `-k` accept
-three kmer sizes.  Please please the arguments accordingly.
-
-`data.tar` could be a tarball of gzipped paired-end fastq files, or a
-gzipped tar of uncompressed fastq files, both situation occurs in the
-TCGA samples. It's dealt in the
-[`extract_tarball`](https://github.com/bcgsc/tasrkleat/blob/master/app/app.py#L26)
-function if you need more details. It only dealt with paired-end reads.
-
-If you indeed want to upload the results to a Google cloud storage
-bucket, please make sure it exists and you have the proper
-permission. Otherwise, that step will simply fail currently. But the
-results would still be on the local file system.
-
+* `--input-bf` accepts the pre-built input bloomfilters.
+* `--transabyss-kmer-sizes` accept three kmer sizes.
+* `--input-tar` could be a tarball of gzipped fastq files, or a gzipped tar of
+   uncompressed fastq files, both situation occurs in the TCGA samples. It's
+   dealt in the
+   [`extract_tarball`](https://github.com/bcgsc/tasrkleat/blob/master/app/app.py#L26)
+   function if you need more details. Currently, tasrkleat can only handle
+   paired-end data.
 
 After you get familiar with how the pipeline works, you could run it
 in batch mode, e.g.
 
 ```
-sudo docker run \
-	--rm \
+sudo docker run --rm \
 	-v /path/to/reference:/mnt \
 	-v /path/to/reads-data/:/data \
 	zyxue/tasrkleat:latest \
-	app.py \
-		--input-tar /data/data.tar \
-		--input-bf /mnt/targets.bf -k 32 52 72 \
-		--reference-genome /mnt/hg19.fa \
-		--reference-genome-gmap-index /mnt/gmapdb \
-		--gtf /mnt/ensembl.fixed.sorted.gz \
-		--output-gsc-path gs://tasrkleat-benchmark-kleat"; done
+    app.py --input-tar /data/data.tar \
+           --input-bf /mnt/targets.bf \
+           --transabyss-kmer-sizes 32 52 72 \
+           --reference-genome /mnt/hg19.fa \
+           --reference-genome-gmap-index /mnt/gmapdb \
+           --gtf /mnt/ensembl.fixed.sorted.gz
 ```
 
-The command is mostly the same to that in the interactive mode except
-for the part that enables interaction (i.e. `-it` and `/bin/bash` are
-removed). Now it runs `app.py` directly instead of `/bin/bash` when
-the container starts.
+The command is mostly the same to that in the interactive mode except for the
+parts that enable interaction (e.g. `-it` and `/bin/bash`) are removed. Now it
+runs `app.py` directly instead of `/bin/bash` when the container starts.
 
 ### Development
 
 1. Version every package installed if possible in the Dockerfile.
-2. Run `docker push zyxue/tasrkleat:<tag>` mannually to avoid accidental build for now.
+2. Push each versioned image explicitly with `docker push zyxue/tasrkleat:<tag>`.

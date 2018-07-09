@@ -38,13 +38,6 @@ def gen_config():
                 'reference_genome': args.reference_genome,
                 'annotations': args.gtf,
             },
-
-            'transfer': {
-                # add to the end of the path so that it would be created if not
-                # exists already according to gsutil cp --help
-                'output_gsc_path': args.output_gsc_path.rstrip('/') + '/',
-            },
-
         },
 
     }
@@ -113,7 +106,6 @@ def configure_logging_dict(output_log_file):
                 },
             },
         }
-
 
 
 CONFIG = gen_config()

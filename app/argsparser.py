@@ -1,15 +1,10 @@
 import ruffus as R
-import multiprocessing
 
 
 def parse_args():
     parser = R.cmdline.get_argparse(
         description="tasrkleat",
         usage='require python-2.7.x')
-
-    # parser.add_argument(
-    #     '-i', '--input-bam', required=True,
-    #     help=("input bam file"))
 
     parser.add_argument(
         '--input-tar', required=True,
@@ -52,12 +47,7 @@ def parse_args():
 
     parser.add_argument(
         '--output-log',
-        help='output log file, default to <current_dir>/bamqc.log')
-
-    parser.add_argument(
-        '--output-gsc-path', required=True,
-        help=('output Google Cloud Storage path. All results will be copied '
-              'back to this path'))
+        help='output log file, default to <current_dir>/tasrkleat.log')
 
     args = parser.parse_args()
     return args

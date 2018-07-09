@@ -312,6 +312,7 @@ def kleat(inputs, output):
                     r2c_bam,
                     output_prefix])
     U.execute(cmd)
+    cfg = CONFIG['steps']['transfer']
 
 
 def cleanup(outdir):
@@ -333,26 +334,6 @@ def cleanup(outdir):
         os.path.join(outdir, 'kleat')))
     U.execute('rm -rfv {0}/cba.transcript_seqs'.format(
         os.path.join(outdir, 'kleat')))
-
-
-@R.follows(kleat)
-def transfer():
-    """
-    Outputparameters (e.g.
-    https://github.com/googlegenomics/pipelines-api-examples/blob/67dde2a79605b75535eb87965523d8596f07545e/fastqc/cloud/run_fastqc.py#L163)
-    was not used because it doesn't support recursive copy, which would be very
-    inconvenient if every directory in the results needs worked out and listed
-    mannually
-    """
-    cleanup(CONFIG['output_dir'])
-
-    cfg = CONFIG['steps']['transfer']
-    cfg['output_dir'] = CONFIG['output_dir']
-    cmd = 'gsutil -m cp -r {output_dir} {output_gsc_path}'.format(**cfg)
-    # use subprocess.call instead of U.execute because the race between
-    # tasrkleat writing gsutil's output to tasrkleat.log and gsutil uploading
-    # tasrkleat.log to GCS can cause upload failure
-    subprocess.call(cmd.split())
 
 
 if __name__ == "__main__":

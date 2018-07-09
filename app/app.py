@@ -312,7 +312,7 @@ def kleat(inputs, output):
                     r2c_bam,
                     output_prefix])
     U.execute(cmd)
-    cfg = CONFIG['steps']['transfer']
+    cleanup(CONFIG['output_dir'])
 
 
 def cleanup(outdir):

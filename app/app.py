@@ -220,6 +220,7 @@ def align_contigs2genome(inputs, outputs):
     cfg = CONFIG['steps']['align_contigs2genome']
     cfg.update(locals())
     cmd = ('gmap '
+           '--batch 4 '
            '--db hg19 '
            '--dir {reference_genome_gmap_index} '
            '--nthreads {num_cpus} '

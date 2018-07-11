@@ -276,9 +276,10 @@ def align_reads2contigs(inputs, outputs):
     input_fq1, input_fq2 = inputs
     # the same as the output contigs.fa from abyss
     index = os.path.join(CONFIG['output_dir'], 'transabyss', 'merged.fa')
+    num_cpus = CONFIG['num_cpus']
     output_bam = outputs[0]
     output_bam_prefix = re.sub('\.bam$', '', output_bam)
-    cmd = ('bwa mem {index} {input_fq1} {input_fq2} '
+    cmd = ('bwa mem -t {num_cpus} {index} {input_fq1} {input_fq2} '
            '| samtools view -bhS - '
            '| samtools sort - {output_bam_prefix}'.format(**locals()))
     U.execute(cmd)

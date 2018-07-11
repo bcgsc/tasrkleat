@@ -1,5 +1,11 @@
 # tasrkleat
 
+ChangeLog.md is retired. Instead write change log whenever creating a new tag with
+
+```
+git tag -a <commit hash>
+```
+
 ### Version v0.2.1
 
 - added --batch 4 to gmap to speed up contigs2genome alignment

@@ -1,12 +1,21 @@
 # tasrkleat
 
-### Version v0.1.2 ###
+### Version v0.2.1
+
+- added --batch 4 to gmap to speed up contigs2genome alignment
+- added -t to bwa mem to speed up reads2contigs alignment
+
+### Version v0.2 ###
 
 - removed transfer step, leave it to Google Genomics API. This step is creating
   trouble somehow, see the description of the problem on [GGP
   forum](https://groups.google.com/forum/#!topic/google-genomics-discuss/RQBscD6YSjk).
-- added --batch 4 to gsnap to speed up read2genome alignment
+- added --batch 4 to gsnap to speed up reads2genome alignment
 	
+### Version v0.1.2 ###
+
+- Updated Readme.md and ChangeLog.md
+
 ### Version v0.1.1 ###
 
 - Adjusted Gsnap arguments for better read2genome alignment (add --novelsplicing=1), for use of benchmarking DaPars

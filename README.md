@@ -163,3 +163,12 @@ runs `app.py` directly instead of `/bin/bash` when the container starts.
 
 1. Version every package installed if possible in the Dockerfile.
 2. Push each versioned image explicitly with `docker push zyxue/tasrkleat:<tag>`.
+3. Write changlog with `git tag -a <commit hash>` for new releases in the following format
+    ```
+    One sentence summary
+
+    - changed thing a
+    - change thing b
+
+    Memo or other stuff to be recorded
+    ```

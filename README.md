@@ -20,14 +20,10 @@ pipeline. There is still no option implemented to disable any of them yet.
 
 ### Citation
 
-Zhuyi Xue, Rene L. Warren, Ewan A. Gibb, Daniel MacMillan, Johnathan Wong, Readman Chiu, S. Austin Hammond, Chen Yang, Ka Ming Nip, Catherine A. Ennis, Abigail Hahn, Sheila Reynolds, Inanc Birol
-
-**Recurrent tumor-specific regulation of alternative polyadenylation of cancer-related genes**
-
-BMC Genomics (in publication)
-
-DOI : 10.1186/s12864-018-4903-7
-
+<a href=https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-018-4903-7
+, target=_blank>Xue Z, Warren RL, Gibb EA, MacMillan D, Wong J, Chiu R, et al.
+<cite>Recurrent tumor-specific regulation of alternative polyadenylation of
+cancer-related genes</cite>. BMC Genomics. 2018;19:536</a>
 
 ### Running environment
 

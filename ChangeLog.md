@@ -2,7 +2,9 @@
 
 ### Version v0.2.2 (2018-XX-XX)
 
-- added --dry-run option
+- commented out `align_reads2genome` & `index_reads2genome`, too computationally
+  expensive for a large number of genes, and not essential for predicting
+  cleavage sites
 - removed broken code on `R.pipeline_printout_graph`
 
 ### Version v0.2.1 (2018-07-11)

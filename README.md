@@ -20,10 +20,9 @@ pipeline. There is still no option implemented to disable any of them yet.
 
 ### Citation
 
-<a href=https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-018-4903-7
-, target=_blank>Xue Z, Warren RL, Gibb EA, MacMillan D, Wong J, Chiu R, et al.
+[Xue Z, Warren RL, Gibb EA, MacMillan D, Wong J, Chiu R, et al.
 <cite>Recurrent tumor-specific regulation of alternative polyadenylation of
-cancer-related genes</cite>. BMC Genomics. 2018;19:536</a>
+cancer-related genes</cite>. BMC Genomics. 2018;19:536](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-018-4903-7)
 
 ### Running environment
 
